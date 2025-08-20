@@ -54,7 +54,7 @@ export function TranscriptList({ lines, onEditLine }: TranscriptListProps) {
       case 'medium':
         return 'text-medical-confidence-medium border-medical-confidence-medium/20 bg-medical-confidence-medium/5';
       case 'low':
-        return 'text-medical-confidence-low border-medical-confidence-low/20 bg-medical-confidence-low/5';
+        return 'bg-yellow-50 text-medical-confidence-low border-medical-confidence-low/20';
       default:
         return 'text-foreground border-border bg-background';
     }
