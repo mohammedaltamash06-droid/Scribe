@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, Plus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/tables/ConfirmDialog";
 
 interface Correction {
   before: string;
@@ -25,6 +26,11 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
   ]);
   const [newBefore, setNewBefore] = useState("");
   const [newAfter, setNewAfter] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    index: number;
+    correction: Correction | null;
+  }>({ open: false, index: -1, correction: null });
 
   const addCorrection = () => {
     if (newBefore.trim() && newAfter.trim()) {
@@ -38,13 +44,24 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
     }
   };
 
-  const removeCorrection = (index: number) => {
-    const removed = corrections[index];
-    setCorrections(corrections.filter((_, i) => i !== index));
-    toast({
-      title: "Correction Removed",
-      description: `"${removed.before}" → "${removed.after}" removed.`,
+  const handleDeleteClick = (index: number) => {
+    setConfirmDelete({
+      open: true,
+      index,
+      correction: corrections[index]
     });
+  };
+
+  const confirmDeleteCorrection = () => {
+    if (confirmDelete.index >= 0) {
+      const removed = corrections[confirmDelete.index];
+      setCorrections(corrections.filter((_, i) => i !== confirmDelete.index));
+      toast({
+        title: "Correction Removed",
+        description: `"${removed.before}" → "${removed.after}" removed.`,
+      });
+    }
+    setConfirmDelete({ open: false, index: -1, correction: null });
   };
 
   const saveAll = () => {
@@ -126,7 +143,7 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeCorrection(index)}
+                        onClick={() => handleDeleteClick(index)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -139,6 +156,16 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
           )}
         </CardContent>
       </Card>
+      
+      <ConfirmDialog
+        open={confirmDelete.open}
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}
+        onConfirm={confirmDeleteCorrection}
+        title="Delete Correction"
+        description={`Are you sure you want to delete the correction "${confirmDelete.correction?.before}" → "${confirmDelete.correction?.after}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

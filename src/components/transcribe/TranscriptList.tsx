@@ -15,9 +15,10 @@ interface TranscriptLine {
 interface TranscriptListProps {
   lines: TranscriptLine[];
   onEditLine: (index: number, newText: string) => void;
+  lowConfidenceIndices?: number[];
 }
 
-export function TranscriptList({ lines, onEditLine }: TranscriptListProps) {
+export function TranscriptList({ lines, onEditLine, lowConfidenceIndices = [] }: TranscriptListProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
 
@@ -81,7 +82,8 @@ export function TranscriptList({ lines, onEditLine }: TranscriptListProps) {
           key={line.id}
           className={cn(
             "p-4 rounded-lg border transition-all duration-200 hover:shadow-soft",
-            getConfidenceColor(line.confidence)
+            getConfidenceColor(line.confidence),
+            lowConfidenceIndices.includes(index) && "bg-yellow-50"
           )}
         >
           <div className="flex items-start justify-between mb-2">

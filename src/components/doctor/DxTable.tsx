@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Save, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/tables/ConfirmDialog";
 
 interface Diagnosis {
   code: string;
@@ -29,6 +30,11 @@ export function DxTable({ doctorId }: DxTableProps) {
   const [newCode, setNewCode] = useState("");
   const [newTerm, setNewTerm] = useState("");
   const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    index: number;
+    diagnosis: Diagnosis | null;
+  }>({ open: false, index: -1, diagnosis: null });
 
   const addDiagnosis = () => {
     if (newCode.trim() && newTerm.trim()) {
@@ -47,13 +53,24 @@ export function DxTable({ doctorId }: DxTableProps) {
     }
   };
 
-  const removeDiagnosis = (index: number) => {
-    const removed = diagnoses[index];
-    setDiagnoses(diagnoses.filter((_, i) => i !== index));
-    toast({
-      title: "Diagnosis Removed",
-      description: `${removed.code} - ${removed.term} removed.`,
+  const handleDeleteClick = (index: number) => {
+    setConfirmDelete({
+      open: true,
+      index,
+      diagnosis: diagnoses[index]
     });
+  };
+
+  const confirmDeleteDiagnosis = () => {
+    if (confirmDelete.index >= 0) {
+      const removed = diagnoses[confirmDelete.index];
+      setDiagnoses(diagnoses.filter((_, i) => i !== confirmDelete.index));
+      toast({
+        title: "Diagnosis Removed",
+        description: `${removed.code} - ${removed.term} removed.`,
+      });
+    }
+    setConfirmDelete({ open: false, index: -1, diagnosis: null });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -170,7 +187,7 @@ export function DxTable({ doctorId }: DxTableProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeDiagnosis(index)}
+                        onClick={() => handleDeleteClick(index)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -183,6 +200,16 @@ export function DxTable({ doctorId }: DxTableProps) {
           )}
         </CardContent>
       </Card>
+      
+      <ConfirmDialog
+        open={confirmDelete.open}
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}
+        onConfirm={confirmDeleteDiagnosis}
+        title="Delete Diagnosis"
+        description={`Are you sure you want to delete the diagnosis "${confirmDelete.diagnosis?.code} - ${confirmDelete.diagnosis?.term}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

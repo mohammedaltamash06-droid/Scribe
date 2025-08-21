@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Save, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/tables/ConfirmDialog";
 
 interface Procedure {
   code: string;
@@ -30,6 +31,11 @@ export function ProcTable({ doctorId }: ProcTableProps) {
   const [newCode, setNewCode] = useState("");
   const [newTerm, setNewTerm] = useState("");
   const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    index: number;
+    procedure: Procedure | null;
+  }>({ open: false, index: -1, procedure: null });
 
   const addProcedure = () => {
     if (newCode.trim() && newTerm.trim()) {
@@ -48,13 +54,24 @@ export function ProcTable({ doctorId }: ProcTableProps) {
     }
   };
 
-  const removeProcedure = (index: number) => {
-    const removed = procedures[index];
-    setProcedures(procedures.filter((_, i) => i !== index));
-    toast({
-      title: "Procedure Removed",
-      description: `${removed.code} - ${removed.term} removed.`,
+  const handleDeleteClick = (index: number) => {
+    setConfirmDelete({
+      open: true,
+      index,
+      procedure: procedures[index]
     });
+  };
+
+  const confirmDeleteProcedure = () => {
+    if (confirmDelete.index >= 0) {
+      const removed = procedures[confirmDelete.index];
+      setProcedures(procedures.filter((_, i) => i !== confirmDelete.index));
+      toast({
+        title: "Procedure Removed",
+        description: `${removed.code} - ${removed.term} removed.`,
+      });
+    }
+    setConfirmDelete({ open: false, index: -1, procedure: null });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -177,7 +194,7 @@ export function ProcTable({ doctorId }: ProcTableProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeProcedure(index)}
+                        onClick={() => handleDeleteClick(index)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -190,6 +207,16 @@ export function ProcTable({ doctorId }: ProcTableProps) {
           )}
         </CardContent>
       </Card>
+      
+      <ConfirmDialog
+        open={confirmDelete.open}
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}
+        onConfirm={confirmDeleteProcedure}
+        title="Delete Procedure"
+        description={`Are you sure you want to delete the procedure "${confirmDelete.procedure?.code} - ${confirmDelete.procedure?.term}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Save, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/tables/ConfirmDialog";
 
 interface Medication {
   code_system: string;
@@ -62,6 +63,11 @@ export function RxTable({ doctorId }: RxTableProps) {
   const [newRoute, setNewRoute] = useState("PO");
   const [newFreq, setNewFreq] = useState("");
   const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    index: number;
+    medication: Medication | null;
+  }>({ open: false, index: -1, medication: null });
 
   const routes = ["PO", "IV", "IM", "SubQ", "Topical", "Inhaled", "PR", "SL"];
   const frequencies = [
@@ -93,13 +99,24 @@ export function RxTable({ doctorId }: RxTableProps) {
     }
   };
 
-  const removeMedication = (index: number) => {
-    const removed = medications[index];
-    setMedications(medications.filter((_, i) => i !== index));
-    toast({
-      title: "Medication Removed",
-      description: `${removed.drug_name} ${removed.strength} removed.`,
+  const handleDeleteClick = (index: number) => {
+    setConfirmDelete({
+      open: true,
+      index,
+      medication: medications[index]
     });
+  };
+
+  const confirmDeleteMedication = () => {
+    if (confirmDelete.index >= 0) {
+      const removed = medications[confirmDelete.index];
+      setMedications(medications.filter((_, i) => i !== confirmDelete.index));
+      toast({
+        title: "Medication Removed",
+        description: `${removed.drug_name} ${removed.strength} removed.`,
+      });
+    }
+    setConfirmDelete({ open: false, index: -1, medication: null });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -279,7 +296,7 @@ export function RxTable({ doctorId }: RxTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeMedication(index)}
+                          onClick={() => handleDeleteClick(index)}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -293,6 +310,16 @@ export function RxTable({ doctorId }: RxTableProps) {
           )}
         </CardContent>
       </Card>
+      
+      <ConfirmDialog
+        open={confirmDelete.open}
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}
+        onConfirm={confirmDeleteMedication}
+        title="Delete Medication"
+        description={`Are you sure you want to delete the medication "${confirmDelete.medication?.drug_name} ${confirmDelete.medication?.strength}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

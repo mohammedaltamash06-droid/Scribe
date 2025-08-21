@@ -18,6 +18,7 @@ export default function Transcribe() {
   const { toast } = useToast();
   const [doctorId, setDoctorId] = useState<string>("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -55,46 +56,47 @@ export default function Transcribe() {
   }, [toast]);
 
   const handleFileUpload = async (file: File) => {
-    if (!jobId) {
-      toast({
-        title: "Error", 
-        description: "No job ID available. Please refresh the page.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadedFile(file);
-    
     try {
+      setUploadedFile(file);
+      
+      // Create object URL for audio player
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
+      
+      // Mock API call to create job
+      const jobResponse = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doctorId })
+      });
+      
+      if (!jobResponse.ok) throw new Error('Failed to create job');
+      
+      const { jobId: newJobId } = await jobResponse.json();
+      setJobId(newJobId);
+      
+      // Mock upload file
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`/api/jobs/${jobId}/upload`, {
+      const uploadResponse = await fetch(`/api/jobs/${newJobId}/upload`, {
         method: 'POST',
         body: formData
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: "File Uploaded",
-          description: `${data.name} uploaded successfully.`
-        });
-      } else {
-        throw new Error('Upload failed');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
+      if (!uploadResponse.ok) throw new Error('Failed to upload file');
+      
       toast({
-        title: "Upload Failed",
-        description: "Failed to upload audio file.",
-        variant: "destructive"
+        title: "File uploaded successfully",
+        description: `${file.name} is ready for transcription`,
       });
-      setUploadedFile(null);
-    } finally {
-      setIsUploading(false);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast({
+        title: "Upload failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
     }
   };
 
@@ -266,8 +268,8 @@ export default function Transcribe() {
           </CardHeader>
           <CardContent className="space-y-4">
             <UploadDropzone 
-              onFileUpload={handleFileUpload} 
-              uploadedFile={uploadedFile}
+              onFileSelected={handleFileUpload}
+              uploadedFile={uploadedFile} 
             />
             {uploadedFile && (
               <div className="p-4 bg-secondary/50 rounded-lg">
@@ -290,7 +292,7 @@ export default function Transcribe() {
             <div className="flex justify-center">
               <Button
                 onClick={handleStartTranscription}
-                disabled={!uploadedFile || !doctorId.trim() || isTranscribing || isUploading}
+                disabled={!uploadedFile || !doctorId.trim() || isTranscribing}
                 size="lg"
                 className="bg-gradient-primary hover:bg-primary-hover shadow-medium"
               >
@@ -306,7 +308,11 @@ export default function Transcribe() {
           {/* Left: Audio Player */}
           <div className="lg:col-span-1">
             {uploadedFile ? (
-              <AudioPlayer file={uploadedFile} />
+                <AudioPlayer 
+                  src={audioUrl}
+                  onBack15={() => console.log('Back 15s')}
+                  onPlayPause={(playing) => console.log('Play/Pause:', playing)}
+                />
             ) : (
               <Card>
                 <CardContent className="p-6 text-center text-muted-foreground">

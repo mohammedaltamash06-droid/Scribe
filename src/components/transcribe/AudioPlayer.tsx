@@ -5,25 +5,17 @@ import { Slider } from "@/components/ui/slider";
 import { Play, Pause, SkipBack, Volume2 } from "lucide-react";
 
 interface AudioPlayerProps {
-  file: File;
+  src: string;
+  onBack15?: () => void;
+  onPlayPause?: (isPlaying: boolean) => void;
 }
 
-export function AudioPlayer({ file }: AudioPlayerProps) {
+export function AudioPlayer({ src, onBack15, onPlayPause }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState([50]);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [audioUrl, setAudioUrl] = useState<string>("");
-
-  useEffect(() => {
-    const url = URL.createObjectURL(file);
-    setAudioUrl(url);
-    
-    return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [file]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -39,24 +31,27 @@ export function AudioPlayer({ file }: AudioPlayerProps) {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
     };
-  }, [audioUrl]);
+  }, [src]);
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.pause();
-    } else {
+    const newIsPlaying = !isPlaying;
+    if (newIsPlaying) {
       audio.play();
+    } else {
+      audio.pause();
     }
-    setIsPlaying(!isPlaying);
+    setIsPlaying(newIsPlaying);
+    onPlayPause?.(newIsPlaying);
   };
 
   const skipBack = () => {
     const audio = audioRef.current;
     if (audio) {
       audio.currentTime = Math.max(0, audio.currentTime - 15);
+      onBack15?.();
     }
   };
 
@@ -85,7 +80,7 @@ export function AudioPlayer({ file }: AudioPlayerProps) {
   return (
     <Card>
       <CardContent className="p-6">
-        <audio ref={audioRef} src={audioUrl} />
+        <audio ref={audioRef} src={src} />
         
         <div className="space-y-4">
           {/* Progress Bar */}
@@ -136,7 +131,7 @@ export function AudioPlayer({ file }: AudioPlayerProps) {
 
           {/* File Info */}
           <div className="text-sm text-muted-foreground">
-            Playing: {file.name}
+            Now Playing
           </div>
         </div>
       </CardContent>

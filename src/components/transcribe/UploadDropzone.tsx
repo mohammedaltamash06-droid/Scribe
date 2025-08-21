@@ -5,16 +5,16 @@ import { Upload, FileAudio, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UploadDropzoneProps {
-  onFileUpload: (file: File) => void;
+  onFileSelected: (file: File) => void;
   uploadedFile?: File | null;
 }
 
-export function UploadDropzone({ onFileUpload, uploadedFile }: UploadDropzoneProps) {
+export function UploadDropzone({ onFileSelected, uploadedFile }: UploadDropzoneProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
-      onFileUpload(acceptedFiles[0]);
+      onFileSelected(acceptedFiles[0]);
     }
-  }, [onFileUpload]);
+  }, [onFileSelected]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
