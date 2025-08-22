@@ -17,28 +17,27 @@ export function CorrectionsList({ doctorId }: CorrectionsListProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock API call - replace with actual API
     const fetchCorrections = async () => {
+      if (!doctorId) return;
+      
       setLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mock data based on doctor
-      const mockCorrections: Correction[] = [
-        { before: "chest pain", after: "chest discomfort" },
-        { before: "shortness of breath", after: "dyspnea" },
-        { before: "heart beat", after: "cardiac rhythm" },
-        { before: "high blood pressure", after: "hypertension" },
-        { before: "sugar diabetes", after: "diabetes mellitus" },
-      ];
-      
-      setCorrections(mockCorrections);
-      setLoading(false);
+      try {
+        const response = await fetch(`/api/doctor/${doctorId}/corrections`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch corrections');
+        }
+        const data = await response.json();
+        setCorrections(data.items || []);
+      } catch (error) {
+        console.error('Error fetching corrections:', error);
+        setCorrections([]);
+        // Could show error toast here if useToast is available
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (doctorId) {
-      fetchCorrections();
-    }
+    fetchCorrections();
   }, [doctorId]);
 
   if (loading) {
@@ -55,8 +54,12 @@ export function CorrectionsList({ doctorId }: CorrectionsListProps) {
 
   if (corrections.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground">
-        <p className="text-sm">No corrections configured for this doctor</p>
+      <div className="text-center py-8 text-muted-foreground">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-muted/50 flex items-center justify-center">
+          <ArrowRight className="h-6 w-6" />
+        </div>
+        <p className="text-sm font-medium">No corrections configured</p>
+        <p className="text-xs mt-1">This doctor hasn't set up any text corrections yet</p>
       </div>
     );
   }

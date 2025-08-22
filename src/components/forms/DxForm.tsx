@@ -17,13 +17,15 @@ interface DxFormProps {
   onCancel?: () => void;
   initialData?: Diagnosis;
   title?: string;
+  loading?: boolean;
 }
 
 export function DxForm({ 
   onSubmit, 
   onCancel, 
   initialData, 
-  title = "Add New Diagnosis" 
+  title = "Add New Diagnosis",
+  loading = false
 }: DxFormProps) {
   const [code, setCode] = useState(initialData?.code || "");
   const [term, setTerm] = useState(initialData?.term || "");
@@ -64,6 +66,7 @@ export function DxForm({
         setCode("");
         setTerm("");
         setPriority('medium');
+        setErrors({});
       }
     }
   };
@@ -77,15 +80,15 @@ export function DxForm({
   };
 
   return (
-    <Card>
+    <Card className="rounded-xl border bg-card shadow-soft">
       <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle className="text-base font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="icd-code" className="required">
+              <Label htmlFor="icd-code" className="font-medium text-foreground after:content-['*'] after:text-destructive after:ml-1">
                 ICD-10 Code
               </Label>
               <Input
@@ -93,19 +96,28 @@ export function DxForm({
                 placeholder="e.g., R06.02"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className={errors.code ? "border-destructive" : ""}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('diagnosis-term')?.focus();
+                  }
+                }}
+                className={`transition-all duration-200 focus:ring-2 focus:ring-primary/20 font-mono ${
+                  errors.code ? "border-destructive focus:ring-destructive/20" : ""
+                }`}
                 aria-invalid={!!errors.code}
                 aria-describedby={errors.code ? "code-error" : undefined}
               />
               {errors.code && (
-                <p id="code-error" className="text-sm text-destructive">
+                <p id="code-error" className="text-sm text-destructive flex items-center gap-1">
+                  <span className="w-1 h-1 bg-destructive rounded-full"></span>
                   {errors.code}
                 </p>
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="diagnosis-term" className="required">
+              <Label htmlFor="diagnosis-term" className="font-medium text-foreground after:content-['*'] after:text-destructive after:ml-1">
                 Diagnosis Term
               </Label>
               <Input
@@ -113,42 +125,64 @@ export function DxForm({
                 placeholder="e.g., Shortness of breath"
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
-                className={errors.term ? "border-destructive" : ""}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('priority-select')?.focus();
+                  }
+                  if (e.key === 'Escape') {
+                    handleCancel();
+                  }
+                }}
+                className={`transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
+                  errors.term ? "border-destructive focus:ring-destructive/20" : ""
+                }`}
                 aria-invalid={!!errors.term}
                 aria-describedby={errors.term ? "term-error" : undefined}
               />
               {errors.term && (
-                <p id="term-error" className="text-sm text-destructive">
+                <p id="term-error" className="text-sm text-destructive flex items-center gap-1">
+                  <span className="w-1 h-1 bg-destructive rounded-full"></span>
                   {errors.term}
                 </p>
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority-select" className="font-medium text-foreground">Priority</Label>
               <Select value={priority} onValueChange={(value: 'high' | 'medium' | 'low') => setPriority(value)}>
-                <SelectTrigger>
+                <SelectTrigger id="priority-select" className="focus:ring-2 focus:ring-primary/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="high">High Priority</SelectItem>
+                  <SelectItem value="medium">Medium Priority</SelectItem>
+                  <SelectItem value="low">Low Priority</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end space-x-2 pt-2">
             {onCancel && (
-              <Button type="button" variant="outline" onClick={handleCancel}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancel}
+                disabled={loading}
+                className="transition-all duration-200 hover:bg-muted"
+              >
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
             )}
-            <Button type="submit" disabled={!code.trim() || !term.trim()}>
+            <Button 
+              type="submit" 
+              disabled={!code.trim() || !term.trim() || loading}
+              className="transition-all duration-200"
+            >
               <Plus className="h-4 w-4 mr-2" />
-              {initialData ? "Update" : "Add"} Diagnosis
+              {loading ? "Adding..." : (initialData ? "Update" : "Add")} Diagnosis
             </Button>
           </div>
         </form>

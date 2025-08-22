@@ -13,20 +13,24 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon: Icon, description, trend, trendUp }: StatCardProps) {
   return (
-    <Card className="hover:shadow-medium transition-all duration-200">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-primary" />
+    <Card className="rounded-xl border bg-card shadow-soft transition-all duration-200 hover:shadow-medium">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <div>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          <div className="text-2xl font-bold text-foreground mt-1">{value}</div>
+        </div>
+        <div className="p-3 rounded-xl bg-primary/10 text-primary">
+          <Icon className="h-6 w-6" />
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">
+      <CardContent className="pt-0">
+        <p className="text-xs text-muted-foreground">
           {description}
         </p>
         {trend && (
-          <div className="flex items-center mt-2">
+          <div className="flex items-center mt-3 pt-2 border-t border-border/50">
             {trendUp ? (
               <TrendingUp className="h-3 w-3 text-medical-success mr-1" />
             ) : (
@@ -34,10 +38,10 @@ export function StatCard({ title, value, icon: Icon, description, trend, trendUp
             )}
             <Badge 
               variant="outline" 
-              className={`text-xs ${
+              className={`text-xs font-medium ${
                 trendUp 
-                  ? 'text-medical-success border-medical-success/20' 
-                  : 'text-destructive border-destructive/20'
+                  ? 'text-medical-success border-medical-success/20 bg-medical-success/5' 
+                  : 'text-destructive border-destructive/20 bg-destructive/5'
               }`}
             >
               {trend}

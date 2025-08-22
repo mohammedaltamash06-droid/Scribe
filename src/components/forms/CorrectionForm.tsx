@@ -71,15 +71,15 @@ export function CorrectionForm({
   };
 
   return (
-    <Card>
+    <Card className="rounded-xl border bg-card shadow-soft">
       <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle className="text-base font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="before" className="required">
+              <Label htmlFor="before" className="font-medium text-foreground after:content-['*'] after:text-destructive after:ml-1">
                 Original Text
               </Label>
               <Input
@@ -87,19 +87,28 @@ export function CorrectionForm({
                 placeholder="e.g., chest pain"
                 value={before}
                 onChange={(e) => setBefore(e.target.value)}
-                className={errors.before ? "border-destructive" : ""}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('after')?.focus();
+                  }
+                }}
+                className={`transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
+                  errors.before ? "border-destructive focus:ring-destructive/20" : ""
+                }`}
                 aria-invalid={!!errors.before}
                 aria-describedby={errors.before ? "before-error" : undefined}
               />
               {errors.before && (
-                <p id="before-error" className="text-sm text-destructive">
+                <p id="before-error" className="text-sm text-destructive flex items-center gap-1">
+                  <span className="w-1 h-1 bg-destructive rounded-full"></span>
                   {errors.before}
                 </p>
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="after" className="required">
+              <Label htmlFor="after" className="font-medium text-foreground after:content-['*'] after:text-destructive after:ml-1">
                 Corrected Text
               </Label>
               <Input
@@ -107,26 +116,47 @@ export function CorrectionForm({
                 placeholder="e.g., chest discomfort"
                 value={after}
                 onChange={(e) => setAfter(e.target.value)}
-                className={errors.after ? "border-destructive" : ""}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && before.trim() && after.trim()) {
+                    e.preventDefault();
+                    handleSubmit(e as any);
+                  }
+                  if (e.key === 'Escape') {
+                    handleCancel();
+                  }
+                }}
+                className={`transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
+                  errors.after ? "border-destructive focus:ring-destructive/20" : ""
+                }`}
                 aria-invalid={!!errors.after}
                 aria-describedby={errors.after ? "after-error" : undefined}
               />
               {errors.after && (
-                <p id="after-error" className="text-sm text-destructive">
+                <p id="after-error" className="text-sm text-destructive flex items-center gap-1">
+                  <span className="w-1 h-1 bg-destructive rounded-full"></span>
                   {errors.after}
                 </p>
               )}
             </div>
           </div>
           
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end space-x-2 pt-2">
             {onCancel && (
-              <Button type="button" variant="outline" onClick={handleCancel}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancel}
+                className="transition-all duration-200 hover:bg-muted"
+              >
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
             )}
-            <Button type="submit" disabled={!before.trim() || !after.trim()}>
+            <Button 
+              type="submit" 
+              disabled={!before.trim() || !after.trim()}
+              className="transition-all duration-200"
+            >
               <Plus className="h-4 w-4 mr-2" />
               {initialData ? "Update" : "Add"} Correction
             </Button>

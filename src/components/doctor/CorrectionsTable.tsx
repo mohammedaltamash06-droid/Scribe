@@ -19,11 +19,8 @@ interface CorrectionsTableProps {
 
 export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
   const { toast } = useToast();
-  const [corrections, setCorrections] = useState<Correction[]>([
-    { before: "chest pain", after: "chest discomfort" },
-    { before: "shortness of breath", after: "dyspnea" },
-    { before: "heart beat", after: "cardiac rhythm" },
-  ]);
+  const [corrections, setCorrections] = useState<Correction[]>([]);
+  const [loading, setLoading] = useState(false);
   const [newBefore, setNewBefore] = useState("");
   const [newAfter, setNewAfter] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -32,15 +29,35 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
     correction: Correction | null;
   }>({ open: false, index: -1, correction: null });
 
-  const addCorrection = () => {
-    if (newBefore.trim() && newAfter.trim()) {
-      setCorrections([...corrections, { before: newBefore.trim(), after: newAfter.trim() }]);
+  const addCorrection = async () => {
+    if (!newBefore.trim() || !newAfter.trim()) return;
+    
+    setLoading(true);
+    try {
+      const newCorrection = { before: newBefore.trim(), after: newAfter.trim() };
+      const response = await fetch(`/api/doctor/${doctorId}/corrections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [...corrections, newCorrection] })
+      });
+      
+      if (!response.ok) throw new Error('Failed to add correction');
+      
+      setCorrections([...corrections, newCorrection]);
       setNewBefore("");
       setNewAfter("");
       toast({
         title: "Correction Added",
         description: `"${newBefore}" → "${newAfter}" added successfully.`,
       });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add correction. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,95 +81,146 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
     setConfirmDelete({ open: false, index: -1, correction: null });
   };
 
-  const saveAll = () => {
-    // Mock API call
-    toast({
-      title: "Corrections Saved",
-      description: `${corrections.length} corrections saved for ${doctorId}.`,
-    });
+  const saveAll = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/doctor/${doctorId}/corrections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: corrections })
+      });
+      
+      if (!response.ok) throw new Error('Failed to save corrections');
+      
+      toast({
+        title: "Corrections Saved",
+        description: `${corrections.length} corrections saved for ${doctorId}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save corrections. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Add New Correction */}
-      <Card>
+      <Card className="rounded-xl border bg-card shadow-soft">
         <CardHeader>
-          <CardTitle className="text-base">Add New Correction</CardTitle>
+          <CardTitle className="text-base font-medium">Add New Correction</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="before">Original Text</Label>
+              <Label htmlFor="before" className="font-medium">
+                Original Text
+              </Label>
               <Input
                 id="before"
                 placeholder="e.g., chest pain"
                 value={newBefore}
                 onChange={(e) => setNewBefore(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('after')?.focus();
+                  }
+                }}
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="after">Corrected Text</Label>
+              <Label htmlFor="after" className="font-medium">
+                Corrected Text
+              </Label>
               <Input
                 id="after"
                 placeholder="e.g., chest discomfort"
                 value={newAfter}
                 onChange={(e) => setNewAfter(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && newBefore.trim() && newAfter.trim()) {
+                    e.preventDefault();
+                    addCorrection();
+                  }
+                }}
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
-          <Button onClick={addCorrection} disabled={!newBefore.trim() || !newAfter.trim()}>
+          <Button 
+            onClick={addCorrection} 
+            disabled={!newBefore.trim() || !newAfter.trim() || loading}
+            className="transition-all duration-200"
+          >
             <Plus className="h-4 w-4 mr-2" />
-            Add Correction
+            {loading ? "Adding..." : "Add Correction"}
           </Button>
         </CardContent>
       </Card>
 
       {/* Corrections Table */}
-      <Card>
+      <Card className="rounded-xl border bg-card shadow-soft">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Current Corrections ({corrections.length})</CardTitle>
-          <Button onClick={saveAll} disabled={corrections.length === 0}>
+          <CardTitle className="text-base font-medium">Current Corrections ({corrections.length})</CardTitle>
+          <Button 
+            onClick={saveAll} 
+            disabled={corrections.length === 0 || loading}
+            className="transition-all duration-200"
+          >
             <Save className="h-4 w-4 mr-2" />
-            Save All
+            {loading ? "Saving..." : "Save All"}
           </Button>
         </CardHeader>
         <CardContent>
           {corrections.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No corrections configured yet.</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
+                <Plus className="h-8 w-8" />
+              </div>
+              <p className="text-lg font-medium">No corrections configured yet</p>
+              <p className="text-sm mt-1">Add your first text correction above to get started</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Original Text</TableHead>
-                  <TableHead>Corrected Text</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {corrections.map((correction, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono text-sm bg-destructive/5 rounded">
-                      {correction.before}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm bg-medical-success/5 rounded">
-                      {correction.after}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteClick(index)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div className="rounded-xl border bg-background overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50">
+                    <TableHead className="font-medium">Original Text</TableHead>
+                    <TableHead className="font-medium">Corrected Text</TableHead>
+                    <TableHead className="text-right font-medium">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {corrections.map((correction, index) => (
+                    <TableRow key={index} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-mono text-sm bg-destructive/5 rounded-md px-2 py-1">
+                        {correction.before}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm bg-medical-success/5 rounded-md px-2 py-1">
+                        {correction.after}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(index)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          aria-label={`Delete correction: ${correction.before} to ${correction.after}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

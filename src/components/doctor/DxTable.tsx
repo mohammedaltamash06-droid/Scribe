@@ -22,11 +22,8 @@ interface DxTableProps {
 
 export function DxTable({ doctorId }: DxTableProps) {
   const { toast } = useToast();
-  const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([
-    { code: "R06.02", term: "Shortness of breath", priority: 'high' },
-    { code: "R50.9", term: "Fever, unspecified", priority: 'high' },
-    { code: "M25.50", term: "Pain in unspecified joint", priority: 'medium' },
-  ]);
+  const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([]);
+  const [loading, setLoading] = useState(false);
   const [newCode, setNewCode] = useState("");
   const [newTerm, setNewTerm] = useState("");
   const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('medium');
@@ -36,13 +33,26 @@ export function DxTable({ doctorId }: DxTableProps) {
     diagnosis: Diagnosis | null;
   }>({ open: false, index: -1, diagnosis: null });
 
-  const addDiagnosis = () => {
-    if (newCode.trim() && newTerm.trim()) {
-      setDiagnoses([...diagnoses, { 
+  const addDiagnosis = async () => {
+    if (!newCode.trim() || !newTerm.trim()) return;
+    
+    setLoading(true);
+    try {
+      const newDiagnosis = { 
         code: newCode.trim().toUpperCase(), 
         term: newTerm.trim(), 
         priority: newPriority 
-      }]);
+      };
+      
+      const response = await fetch(`/api/doctor/${doctorId}/dx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [...diagnoses, newDiagnosis] })
+      });
+      
+      if (!response.ok) throw new Error('Failed to add diagnosis');
+      
+      setDiagnoses([...diagnoses, newDiagnosis]);
       setNewCode("");
       setNewTerm("");
       setNewPriority('medium');
@@ -50,6 +60,14 @@ export function DxTable({ doctorId }: DxTableProps) {
         title: "Diagnosis Added",
         description: `${newCode} - ${newTerm} added successfully.`,
       });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add diagnosis. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,11 +104,30 @@ export function DxTable({ doctorId }: DxTableProps) {
     }
   };
 
-  const saveAll = () => {
-    toast({
-      title: "Diagnoses Saved",
-      description: `${diagnoses.length} favorite diagnoses saved for ${doctorId}.`,
-    });
+  const saveAll = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/doctor/${doctorId}/dx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: diagnoses })
+      });
+      
+      if (!response.ok) throw new Error('Failed to save diagnoses');
+      
+      toast({
+        title: "Diagnoses Saved",
+        description: `${diagnoses.length} favorite diagnoses saved for ${doctorId}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save diagnoses. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -66,55 +66,94 @@ export function JobsTable() {
     }
   };
 
+  if (mockJobs.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
+          <Eye className="h-8 w-8" />
+        </div>
+        <p className="text-lg font-medium">No transcription jobs yet</p>
+        <p className="text-sm mt-1">Upload your first audio file to get started</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>File Name</TableHead>
-            <TableHead>Doctor</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Corrections</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {mockJobs.map((job) => (
-            <TableRow key={job.id} className="hover:bg-muted/50">
-              <TableCell className="font-medium">{job.fileName}</TableCell>
-              <TableCell>{job.doctor}</TableCell>
-              <TableCell>{job.duration}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className={getStatusColor(job.status)}>
-                  {job.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground">{job.createdAt}</TableCell>
-              <TableCell>
-                {job.corrections > 0 ? (
-                  <Badge variant="outline" className="text-medical-info border-medical-info/20">
-                    {job.corrections}
-                  </Badge>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end space-x-2">
-                  <Button variant="ghost" size="sm" disabled={job.status !== 'completed'}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" disabled={job.status !== 'completed'}>
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+    <div className="rounded-xl border bg-card shadow-soft overflow-hidden">
+      <div className="p-4 border-b border-border/50">
+        <h3 className="font-medium text-foreground">Recent Transcription Jobs</h3>
+        <p className="text-sm text-muted-foreground mt-1">Latest audio transcription activity</p>
+      </div>
+      
+      {mockJobs.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
+            <Eye className="h-8 w-8" />
+          </div>
+          <p className="text-lg font-medium">No transcription jobs yet</p>
+          <p className="text-sm mt-1">Upload your first audio file to get started</p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border/50">
+              <TableHead className="font-medium">File Name</TableHead>
+              <TableHead className="font-medium">Doctor</TableHead>
+              <TableHead className="font-medium">Duration</TableHead>
+              <TableHead className="font-medium">Status</TableHead>
+              <TableHead className="font-medium">Created</TableHead>
+              <TableHead className="font-medium">Corrections</TableHead>
+              <TableHead className="text-right font-medium">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {mockJobs.map((job) => (
+              <TableRow key={job.id} className="hover:bg-muted/30 transition-colors">
+                <TableCell className="font-medium">{job.fileName}</TableCell>
+                <TableCell className="text-muted-foreground">{job.doctor}</TableCell>
+                <TableCell className="font-mono text-sm">{job.duration}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={getStatusColor(job.status)}>
+                    {job.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground font-mono text-sm">{job.createdAt}</TableCell>
+                <TableCell>
+                  {job.corrections > 0 ? (
+                    <Badge variant="outline" className="text-medical-info border-medical-info/20 bg-medical-info/5">
+                      {job.corrections}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled={job.status !== 'completed'}
+                      className="hover:bg-primary/10 hover:text-primary transition-colors"
+                      aria-label={`View ${job.fileName}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled={job.status !== 'completed'}
+                      className="hover:bg-primary/10 hover:text-primary transition-colors"
+                      aria-label={`Download ${job.fileName}`}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
