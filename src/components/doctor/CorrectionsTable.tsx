@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,25 @@ export function CorrectionsTable({ doctorId }: CorrectionsTableProps) {
   const { toast } = useToast();
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Load corrections from API
+  useEffect(() => {
+    const loadCorrections = async () => {
+      if (!doctorId) return;
+      
+      try {
+        const response = await fetch(`/api/doctor/${doctorId}/corrections`);
+        if (response.ok) {
+          const data = await response.json();
+          setCorrections(data.items || []);
+        }
+      } catch (error) {
+        console.error('Error loading corrections:', error);
+      }
+    };
+
+    loadCorrections();
+  }, [doctorId]);
   const [newBefore, setNewBefore] = useState("");
   const [newAfter, setNewAfter] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{

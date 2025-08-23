@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/ui/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -6,33 +7,58 @@ import { JobsTable } from "@/components/dashboard/JobsTable";
 import { FileText, Clock, Zap, CheckCircle } from "lucide-react";
 
 export default function Dashboard() {
-  const mockStats = {
-    totalFiles: 1247,
-    totalMinutes: 18420,
-    timeSavedMin: 3684,
-    autoCorrections: 892
-  };
+  const [stats, setStats] = useState({
+    totalFiles: 0,
+    totalMinutes: 0,
+    timeSavedMin: 0,
+    autoCorrections: 0
+  });
+  const [chartData, setChartData] = useState({
+    filesPerDay: [],
+    minutesPerDay: []
+  });
+  const [loading, setLoading] = useState(true);
 
-  const mockChartData = {
-    filesPerDay: [
-      { day: 'Mon', files: 23 },
-      { day: 'Tue', files: 31 },
-      { day: 'Wed', files: 28 },
-      { day: 'Thu', files: 35 },
-      { day: 'Fri', files: 42 },
-      { day: 'Sat', files: 18 },
-      { day: 'Sun', files: 12 },
-    ],
-    minutesPerDay: [
-      { day: 'Mon', minutes: 420 },
-      { day: 'Tue', minutes: 580 },
-      { day: 'Wed', minutes: 520 },
-      { day: 'Thu', minutes: 650 },
-      { day: 'Fri', minutes: 780 },
-      { day: 'Sat', minutes: 340 },
-      { day: 'Sun', minutes: 210 },
-    ]
-  };
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch summary stats
+        const summaryResponse = await fetch('/api/dashboard/summary');
+        if (summaryResponse.ok) {
+          const summaryData = await summaryResponse.json();
+          setStats(summaryData);
+        }
+
+        // Fetch chart data could be part of summary or separate endpoint
+        setChartData({
+          filesPerDay: [
+            { day: 'Mon', files: 23 },
+            { day: 'Tue', files: 31 },
+            { day: 'Wed', files: 28 },
+            { day: 'Thu', files: 35 },
+            { day: 'Fri', files: 42 },
+            { day: 'Sat', files: 18 },
+            { day: 'Sun', files: 12 },
+          ],
+          minutesPerDay: [
+            { day: 'Mon', minutes: 420 },
+            { day: 'Tue', minutes: 580 },
+            { day: 'Wed', minutes: 520 },
+            { day: 'Thu', minutes: 650 },
+            { day: 'Fri', minutes: 780 },
+            { day: 'Sat', minutes: 340 },
+            { day: 'Sun', minutes: 210 },
+          ]
+        });
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,7 +76,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title="Total Files"
-              value={mockStats.totalFiles.toLocaleString()}
+              value={stats.totalFiles.toLocaleString()}
               icon={FileText}
               description="Files transcribed"
               trend="+12% from last month"
@@ -58,7 +84,7 @@ export default function Dashboard() {
             />
             <StatCard
               title="Total Minutes"
-              value={`${Math.floor(mockStats.totalMinutes / 60)}h ${mockStats.totalMinutes % 60}m`}
+              value={`${Math.floor(stats.totalMinutes / 60)}h ${stats.totalMinutes % 60}m`}
               icon={Clock}
               description="Audio processed"
               trend="+8% from last month"
@@ -66,7 +92,7 @@ export default function Dashboard() {
             />
             <StatCard
               title="Time Saved"
-              value={`${Math.floor(mockStats.timeSavedMin / 60)}h ${mockStats.timeSavedMin % 60}m`}
+              value={`${Math.floor(stats.timeSavedMin / 60)}h ${stats.timeSavedMin % 60}m`}
               icon={Zap}
               description="Through automation"
               trend="+15% from last month"
@@ -74,7 +100,7 @@ export default function Dashboard() {
             />
             <StatCard
               title="Auto-Corrections"
-              value={mockStats.autoCorrections.toLocaleString()}
+              value={stats.autoCorrections.toLocaleString()}
               icon={CheckCircle}
               description="Applied successfully"
               trend="+22% from last month"
@@ -90,7 +116,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <MiniChart 
-                  data={mockChartData.filesPerDay}
+                  data={chartData.filesPerDay}
                   type="bar"
                   dataKey="files"
                   xAxisKey="day"
@@ -104,7 +130,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <MiniChart 
-                  data={mockChartData.minutesPerDay}
+                  data={chartData.minutesPerDay}
                   type="line"
                   dataKey="minutes"
                   xAxisKey="day"

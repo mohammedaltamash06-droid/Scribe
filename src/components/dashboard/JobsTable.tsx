@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -14,40 +15,76 @@ interface Job {
 }
 
 export function JobsTable() {
-  const mockJobs: Job[] = [
-    {
-      id: '1',
-      fileName: 'patient_interview_001.mp3',
-      doctor: 'Dr. Sarah Johnson',
-      duration: '12:34',
-      status: 'completed',
-      createdAt: '2024-01-15 14:30',
-      corrections: 8
-    },
-    {
-      id: '2',
-      fileName: 'consultation_notes_002.wav',
-      doctor: 'Dr. Michael Chen',
-      duration: '8:45',
-      status: 'completed',
-      createdAt: '2024-01-15 13:15',
-      corrections: 5
-    },
-    {
-      id: '3',
-      fileName: 'follow_up_003.m4a',
-      doctor: 'Dr. Emily Rodriguez',
-      duration: '15:22',
-      status: 'processing',
-      createdAt: '2024-01-15 12:00',
-      corrections: 0
-    },
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentJobs = async () => {
+      try {
+        const response = await fetch('/api/jobs/recent');
+        if (response.ok) {
+          const data = await response.json();
+          setJobs(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch recent jobs:', error);
+        // Fallback to mock data for development
+        setJobs([
+          {
+            id: '1',
+            fileName: 'patient_interview_001.mp3',
+            doctor: 'Dr. Sarah Johnson',
+            duration: '12:34',
+            status: 'completed',
+            createdAt: '2024-01-15 14:30',
+            corrections: 8
+          },
+          {
+            id: '2',
+            fileName: 'consultation_notes_002.wav',
+            doctor: 'Dr. Michael Chen',
+            duration: '8:45',
+            status: 'completed',
+            createdAt: '2024-01-15 13:15',
+            corrections: 5
+          },
+          {
+            id: '3',
+            fileName: 'follow_up_003.m4a',
+            doctor: 'Dr. Emily Rodriguez',
+            duration: '15:22',
+            status: 'processing',
+            createdAt: '2024-01-15 12:00',
+            corrections: 0
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentJobs();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-12 bg-muted rounded-md"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const mockJobs = jobs.length > 0 ? jobs : [
     {
       id: '4',
       fileName: 'emergency_notes_004.mp3',
       doctor: 'Dr. Sarah Johnson',
       duration: '6:18',
-      status: 'failed',
+      status: 'failed' as const,
       createdAt: '2024-01-15 11:30',
       corrections: 0
     },

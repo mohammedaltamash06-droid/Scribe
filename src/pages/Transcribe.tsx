@@ -63,23 +63,11 @@ export default function Transcribe() {
       const url = URL.createObjectURL(file);
       setAudioUrl(url);
       
-      // Mock API call to create job
-      const jobResponse = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doctorId })
-      });
-      
-      if (!jobResponse.ok) throw new Error('Failed to create job');
-      
-      const { jobId: newJobId } = await jobResponse.json();
-      setJobId(newJobId);
-      
-      // Mock upload file
+      // Upload file with FormData
       const formData = new FormData();
-      formData.append('file', file);
+      formData.set("file", file);
       
-      const uploadResponse = await fetch(`/api/jobs/${newJobId}/upload`, {
+      const uploadResponse = await fetch(`/api/jobs/${jobId}/upload`, {
         method: 'POST',
         body: formData
       });
@@ -114,15 +102,11 @@ export default function Transcribe() {
       source.onmessage = (event) => {
         const line = event.data;
         if (line.trim()) {
-          // Parse the line data - assuming format: confidence|timestamp|text
-          const [confidence, timestamp, ...textParts] = line.split('|');
-          const text = textParts.join('|');
-          
           const newLine = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            text: text || line,
-            confidence: (confidence as 'high' | 'medium' | 'low') || 'medium',
-            timestamp: parseInt(timestamp) || Date.now()
+            text: line,
+            confidence: 'medium' as 'high' | 'medium' | 'low',
+            timestamp: Date.now()
           };
           
           setTranscriptLines(prev => [...prev, newLine]);
