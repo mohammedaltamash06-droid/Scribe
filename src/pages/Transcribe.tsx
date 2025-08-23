@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Play, Download, Mic, Upload, ExternalLink } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Play, Download, Mic, Upload, ExternalLink, AlertCircle, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/medical-hero.jpg";
 
@@ -20,9 +22,9 @@ export default function Transcribe() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [jobStatus, setJobStatus] = useState<'idle' | 'uploaded' | 'queued' | 'running' | 'done' | 'error'>('idle');
+  const [progress, setProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [transcriptLines, setTranscriptLines] = useState<Array<{
     id: string;
     text: string;
@@ -30,49 +32,100 @@ export default function Transcribe() {
     timestamp: number;
   }>>([]);
   const [mode, setMode] = useState<'lite' | 'balanced' | 'pro'>('balanced');
+  const [doctorCorrections, setDoctorCorrections] = useState<Array<{
+    id: string;
+    name: string;
+    type: 'dx' | 'rx' | 'proc' | 'correction';
+  }>>([]);
 
-  // Create job on component mount
+  // Load doctor corrections
   useEffect(() => {
-    const createJob = async () => {
+    const loadDoctorCorrections = async () => {
+      if (!doctorId.trim()) return;
+      
       try {
-        const response = await fetch('/api/jobs', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch(`/api/doctor/${doctorId}/corrections`);
         if (response.ok) {
           const data = await response.json();
-          setJobId(data.jobId);
+          setDoctorCorrections(data.items || []);
         }
       } catch (error) {
-        console.error('Failed to create job:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create transcription job.",
-          variant: "destructive"
-        });
+        console.error('Failed to load doctor corrections:', error);
       }
     };
-    createJob();
-  }, [toast]);
+    
+    loadDoctorCorrections();
+  }, [doctorId]);
+
+  // Polling effect for job status
+  useEffect(() => {
+    if (!jobId || !['queued', 'running'].includes(jobStatus)) return;
+
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`/api/jobs/${jobId}/status`);
+        if (response.ok) {
+          const data = await response.json();
+          setJobStatus(data.status);
+          setProgress(data.progress || 0);
+          
+          if (data.status === 'done') {
+            // Fetch transcript result
+            const resultResponse = await fetch(`/api/jobs/${jobId}/result`);
+            if (resultResponse.ok) {
+              const resultData = await resultResponse.json();
+              let lines = resultData.lines || [];
+              
+              // Apply doctor corrections automatically
+              lines = applyDoctorCorrections(lines, doctorCorrections);
+              
+              setTranscriptLines(lines);
+              toast({
+                title: "Transcription Complete",
+                description: "Your transcript is ready for review."
+              });
+            }
+          } else if (data.status === 'error') {
+            setErrorMessage(data.error || 'Unknown error occurred');
+            toast({
+              title: "Transcription Failed",
+              description: data.error || 'Unknown error occurred',
+              variant: "destructive"
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+        setJobStatus('error');
+        setErrorMessage('Failed to check job status');
+      }
+    };
+
+    const interval = setInterval(pollStatus, 2500);
+    return () => clearInterval(interval);
+  }, [jobId, jobStatus, doctorCorrections, toast]);
+
+  // Helper function to apply doctor corrections to transcript
+  const applyDoctorCorrections = (lines: any[], corrections: any[]) => {
+    return lines.map(line => {
+      let correctedText = line.text;
+      corrections.forEach(correction => {
+        // Simple find/replace - in real app would be more sophisticated
+        correctedText = correctedText.replace(new RegExp(correction.name, 'gi'), correction.name);
+      });
+      return { ...line, text: correctedText };
+    });
+  };
 
   const handleFileUpload = async (file: File) => {
     try {
       setUploadedFile(file);
+      setJobStatus('uploaded');
+      setErrorMessage("");
       
       // Create object URL for audio player
       const url = URL.createObjectURL(file);
       setAudioUrl(url);
-      
-      // Upload file with FormData
-      const formData = new FormData();
-      formData.set("file", file);
-      
-      const uploadResponse = await fetch(`/api/jobs/${jobId}/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!uploadResponse.ok) throw new Error('Failed to upload file');
       
       toast({
         title: "File uploaded successfully",
@@ -80,6 +133,8 @@ export default function Transcribe() {
       });
     } catch (error) {
       console.error('Upload failed:', error);
+      setJobStatus('error');
+      setErrorMessage('Failed to upload file');
       toast({
         title: "Upload failed",
         description: "Please try again",
@@ -89,52 +144,55 @@ export default function Transcribe() {
   };
 
   const handleStartTranscription = async () => {
-    if (!uploadedFile || !doctorId.trim() || !jobId) return;
+    if (!uploadedFile || !doctorId.trim()) return;
     
-    setIsTranscribing(true);
+    setJobStatus('queued');
+    setProgress(0);
     setTranscriptLines([]);
+    setErrorMessage("");
     
     try {
-      // Start EventSource for live streaming
-      const source = new EventSource(`/api/jobs/${jobId}/stream`);
-      setEventSource(source);
+      // Create job
+      const jobResponse = await fetch('/api/jobs', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
       
-      source.onmessage = (event) => {
-        const line = event.data;
-        if (line.trim()) {
-          const newLine = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            text: line,
-            confidence: 'medium' as 'high' | 'medium' | 'low',
-            timestamp: Date.now()
-          };
-          
-          setTranscriptLines(prev => [...prev, newLine]);
-        }
-      };
+      if (!jobResponse.ok) throw new Error('Failed to create job');
       
-      source.onerror = () => {
-        console.error('EventSource error');
-        source.close();
-        setEventSource(null);
-        setIsTranscribing(false);
-        toast({
-          title: "Transcription Error",
-          description: "Live transcription stream encountered an error.",
-          variant: "destructive"
-        });
-      };
+      const jobData = await jobResponse.json();
+      setJobId(jobData.jobId);
       
-      source.onopen = () => {
-        toast({
-          title: "Transcription Started",
-          description: "Live transcription is now running."
-        });
-      };
+      // Upload file
+      const formData = new FormData();
+      formData.set("file", uploadedFile);
+      
+      const uploadResponse = await fetch(`/api/jobs/${jobData.jobId}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) throw new Error('Failed to upload file');
+      
+      // Start processing
+      const processResponse = await fetch(`/api/jobs/${jobData.jobId}/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      
+      if (!processResponse.ok) throw new Error('Failed to start processing');
+      
+      setJobStatus('running');
+      toast({
+        title: "Transcription Started",
+        description: "Processing your audio file..."
+      });
       
     } catch (error) {
       console.error('Transcription error:', error);
-      setIsTranscribing(false);
+      setJobStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
       toast({
         title: "Error",
         description: "Failed to start transcription.",
@@ -143,14 +201,11 @@ export default function Transcribe() {
     }
   };
 
-  // Cleanup EventSource on unmount
-  useEffect(() => {
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [eventSource]);
+  const handleRetry = () => {
+    setJobStatus('uploaded');
+    setErrorMessage("");
+    setProgress(0);
+  };
 
   const handleEditLine = (index: number, newText: string) => {
     setTranscriptLines(prev => 
@@ -272,18 +327,50 @@ export default function Transcribe() {
               </div>
             )}
             
-            {/* Start Button */}
-            <div className="flex justify-center">
-              <Button
-                onClick={handleStartTranscription}
-                disabled={!uploadedFile || !doctorId.trim() || isTranscribing}
-                size="lg"
-                className="bg-gradient-primary hover:bg-primary-hover shadow-medium"
-              >
-                <Play className="h-5 w-5 mr-2" />
-                {isTranscribing ? 'Live Preview Running...' : 'Start Live Preview'}
-              </Button>
-            </div>
+            {/* Processing Status or Start Button */}
+            {jobStatus === 'error' && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{errorMessage}</span>
+                  <Button
+                    onClick={handleRetry}
+                    variant="outline"
+                    size="sm"
+                    className="ml-4"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {(['queued', 'running'].includes(jobStatus)) && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {jobStatus === 'queued' ? 'Queued for processing...' : 'Transcribing audio...'}
+                  </span>
+                  <span className="text-muted-foreground">{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="w-full" />
+              </div>
+            )}
+            
+            {jobStatus === 'uploaded' && (
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleStartTranscription}
+                  disabled={!uploadedFile || !doctorId.trim()}
+                  size="lg"
+                  className="bg-gradient-primary hover:bg-primary-hover shadow-medium"
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  Transcribe Now
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -311,7 +398,7 @@ export default function Transcribe() {
             {transcriptLines.length > 0 ? (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Live Transcript</CardTitle>
+                  <CardTitle>Transcript</CardTitle>
                   <Badge variant="secondary" className="text-medical-success">
                     {transcriptLines.length} lines
                   </Badge>
@@ -326,13 +413,13 @@ export default function Transcribe() {
             ) : (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Live Transcript</CardTitle>
+                  <CardTitle>Transcript</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-12 text-muted-foreground">
                     <Mic className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="text-lg font-medium">No transcript yet</p>
-                    <p className="text-sm">Upload a file and start transcription to see live preview</p>
+                    <p className="text-sm">Upload a file and start transcription to see results</p>
                   </div>
                 </CardContent>
               </Card>
