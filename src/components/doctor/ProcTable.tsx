@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +22,35 @@ interface ProcTableProps {
 
 export function ProcTable({ doctorId }: ProcTableProps) {
   const { toast } = useToast();
-  const [procedures, setProcedures] = useState<Procedure[]>([
-    { code: "93000", term: "Electrocardiogram, routine ECG with at least 12 leads", priority: 'high' },
-    { code: "71020", term: "Radiologic examination, chest, 2 views", priority: 'high' },
-    { code: "80053", term: "Comprehensive metabolic panel", priority: 'medium' },
-    { code: "85025", term: "Blood count; complete (CBC)", priority: 'medium' },
-  ]);
+  const [procedures, setProcedures] = useState<Procedure[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load procedures
+  useEffect(() => {
+    const loadProcedures = async () => {
+      if (!doctorId.trim()) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/doctor/${doctorId}/proc`);
+        if (response.ok) {
+          const data = await response.json();
+          setProcedures(data.items || []);
+        }
+      } catch (error) {
+        console.error('Failed to load procedures:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load procedures",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadProcedures();
+  }, [doctorId, toast]);
   const [newCode, setNewCode] = useState("");
   const [newTerm, setNewTerm] = useState("");
   const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('medium');
@@ -87,11 +110,29 @@ export function ProcTable({ doctorId }: ProcTableProps) {
     }
   };
 
-  const saveAll = () => {
-    toast({
-      title: "Procedures Saved",
-      description: `${procedures.length} favorite procedures saved for ${doctorId}.`,
-    });
+  const saveAll = async () => {
+    try {
+      const response = await fetch(`/api/doctor/${doctorId}/proc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: procedures })
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Procedures Saved",
+          description: `${procedures.length} favorite procedures saved for ${doctorId}.`,
+        });
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save procedures",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

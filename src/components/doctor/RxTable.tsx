@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,35 +26,8 @@ interface RxTableProps {
 
 export function RxTable({ doctorId }: RxTableProps) {
   const { toast } = useToast();
-  const [medications, setMedications] = useState<Medication[]>([
-    { 
-      code_system: "RxNorm", 
-      code: "307782", 
-      drug_name: "Aspirin", 
-      strength: "81mg", 
-      route: "PO", 
-      freq_text: "once daily", 
-      priority: 'high' 
-    },
-    { 
-      code_system: "RxNorm", 
-      code: "40114", 
-      drug_name: "Metoprolol", 
-      strength: "25mg", 
-      route: "PO", 
-      freq_text: "twice daily", 
-      priority: 'high' 
-    },
-    { 
-      code_system: "RxNorm", 
-      code: "29046", 
-      drug_name: "Lisinopril", 
-      strength: "10mg", 
-      route: "PO", 
-      freq_text: "once daily", 
-      priority: 'medium' 
-    },
-  ]);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [newCodeSystem, setNewCodeSystem] = useState("RxNorm");
   const [newCode, setNewCode] = useState("");
@@ -68,6 +41,33 @@ export function RxTable({ doctorId }: RxTableProps) {
     index: number;
     medication: Medication | null;
   }>({ open: false, index: -1, medication: null });
+
+  // Load medications
+  useEffect(() => {
+    const loadMedications = async () => {
+      if (!doctorId.trim()) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/doctor/${doctorId}/rx`);
+        if (response.ok) {
+          const data = await response.json();
+          setMedications(data.items || []);
+        }
+      } catch (error) {
+        console.error('Failed to load medications:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load medications",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadMedications();
+  }, [doctorId, toast]);
 
   const routes = ["PO", "IV", "IM", "SubQ", "Topical", "Inhaled", "PR", "SL"];
   const frequencies = [
@@ -132,11 +132,29 @@ export function RxTable({ doctorId }: RxTableProps) {
     }
   };
 
-  const saveAll = () => {
-    toast({
-      title: "Medications Saved",
-      description: `${medications.length} favorite medications saved for ${doctorId}.`,
-    });
+  const saveAll = async () => {
+    try {
+      const response = await fetch(`/api/doctor/${doctorId}/rx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: medications })
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Medications Saved",
+          description: `${medications.length} favorite medications saved for ${doctorId}.`,
+        });
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save medications",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
