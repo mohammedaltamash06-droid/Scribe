@@ -5,9 +5,12 @@ import { AudioPlayer } from "@/components/transcribe/AudioPlayer";
 import { TranscriptList } from "@/components/transcribe/TranscriptList";
 import { RightRailTabs } from "@/components/transcribe/RightRailTabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Mic, AlertCircle, Download, ExternalLink, Upload } from "lucide-react";
 
 type JobStatus = "idle" | "uploaded" | "queued" | "running" | "done" | "error";
 
@@ -20,6 +23,7 @@ interface TranscriptLine {
 
 export default function TranscribePage() {
   const { toast } = useToast();
+  const [doctorId, setDoctorId] = useState("");
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -27,6 +31,7 @@ export default function TranscribePage() {
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [corrections, setCorrections] = useState<Array<{ before: string; after: string }>>([]);
+  const [mode, setMode] = useState<"Lite" | "Balanced" | "Pro">("Balanced");
 
   const handleFileUpload = useCallback((file: File) => {
     setUploadedFile(file);
@@ -154,23 +159,43 @@ export default function TranscribePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Audio Transcription</h1>
-        {jobStatus === "done" && (
-          <Button onClick={exportToDocx} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export to Word
-          </Button>
-        )}
+        <div className="flex items-center space-x-3">
+          <Mic className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground">Transcribe</h1>
+        </div>
+        <Button variant="outline" className="flex items-center gap-2">
+          <ExternalLink className="h-4 w-4" />
+          Open Doctor Profile
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {jobStatus === "idle" && (
-            <div className="text-center py-12">
-              <UploadDropzone onFileSelected={handleFileUpload} />
-              <p className="text-muted-foreground mt-4">Upload a file to begin transcription</p>
-            </div>
-          )}
+      {/* Doctor ID Input */}
+      <div className="space-y-2">
+        <Label htmlFor="doctorId">Doctor ID</Label>
+        <Input
+          id="doctorId"
+          value={doctorId}
+          onChange={(e) => setDoctorId(e.target.value)}
+          placeholder="Enter doctor ID (e.g., johnson, chen, rodriguez)"
+          className="max-w-md"
+        />
+      </div>
+
+      {/* Upload Section */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Upload className="h-5 w-5" />
+          <h2 className="text-xl font-semibold">Upload Audio or Video</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {jobStatus === "idle" && (
+              <div className="space-y-4">
+                <UploadDropzone onFileSelected={handleFileUpload} uploadedFile={uploadedFile} />
+                <p className="text-muted-foreground text-center">Upload a file to see audio controls</p>
+              </div>
+            )}
 
           {jobStatus === "uploaded" && uploadedFile && (
             <div className="space-y-4">
@@ -215,20 +240,54 @@ export default function TranscribePage() {
                   src={URL.createObjectURL(uploadedFile)} 
                 />
               )}
-              <TranscriptList 
-                lines={transcript.map(line => ({ ...line, confidence: 'high' as const }))}
-                onEditLine={(index, newText) => {
-                  const updatedTranscript = [...transcript];
-                  updatedTranscript[index].text = newText;
-                  setTranscript(updatedTranscript);
-                }}
-              />
             </div>
           )}
-        </div>
+          </div>
 
-        <div className="lg:col-span-1">
-          <RightRailTabs doctorId="1" />
+          <div className="lg:col-span-1">
+            <RightRailTabs doctorId={doctorId} />
+          </div>
+        </div>
+      </div>
+
+      {/* Transcript Section */}
+      {jobStatus === "done" && transcript.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Transcript</h2>
+            <Button onClick={exportToDocx} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export .docx
+            </Button>
+          </div>
+          <TranscriptList 
+            lines={transcript.map(line => ({ ...line, confidence: 'high' as const }))}
+            onEditLine={(index, newText) => {
+              const updatedTranscript = [...transcript];
+              updatedTranscript[index].text = newText;
+              setTranscript(updatedTranscript);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Mode Selector */}
+      <div className="flex items-center justify-between pt-4 border-t">
+        <div className="text-sm text-muted-foreground">
+          Mode:
+        </div>
+        <div className="flex items-center space-x-2">
+          {(["Lite", "Balanced", "Pro"] as const).map((modeOption) => (
+            <Button
+              key={modeOption}
+              variant={mode === modeOption ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode(modeOption)}
+              className={mode === modeOption ? "bg-primary text-primary-foreground" : ""}
+            >
+              {modeOption}
+            </Button>
+          ))}
         </div>
       </div>
     </div>
