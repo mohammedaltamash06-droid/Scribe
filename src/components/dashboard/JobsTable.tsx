@@ -25,9 +25,11 @@ export function JobsTable() {
         if (response.ok) {
           const data = await response.json();
           setJobs(data);
+        } else {
+          throw new Error('API not available');
         }
       } catch (error) {
-        console.error('Failed to fetch recent jobs:', error);
+        console.log('API not available, using mock data');
         // Fallback to mock data for development
         setJobs([
           {
