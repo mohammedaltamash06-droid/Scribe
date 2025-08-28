@@ -54,66 +54,66 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
 }
 
 
-// Validate ../../app/dashboard/page.tsx
+// Validate ..\..\app\dashboard\page.tsx
 {
-  const handler = {} as typeof import("../../app/dashboard/page.js")
+  const handler = {} as typeof import("..\\..\\app\\dashboard\\page.js")
   handler satisfies AppPageConfig<"/dashboard">
 }
 
-// Validate ../../app/doctor/page.tsx
+// Validate ..\..\app\doctor\page.tsx
 {
-  const handler = {} as typeof import("../../app/doctor/page.js")
+  const handler = {} as typeof import("..\\..\\app\\doctor\\page.js")
   handler satisfies AppPageConfig<"/doctor">
 }
 
-// Validate ../../app/login/page.tsx
+// Validate ..\..\app\login\page.tsx
 {
-  const handler = {} as typeof import("../../app/login/page.js")
+  const handler = {} as typeof import("..\\..\\app\\login\\page.js")
   handler satisfies AppPageConfig<"/login">
 }
 
-// Validate ../../app/page.tsx
+// Validate ..\..\app\page.tsx
 {
-  const handler = {} as typeof import("../../app/page.js")
+  const handler = {} as typeof import("..\\..\\app\\page.js")
   handler satisfies AppPageConfig<"/">
 }
 
-// Validate ../../app/transcribe/page.tsx
+// Validate ..\..\app\transcribe\page.tsx
 {
-  const handler = {} as typeof import("../../app/transcribe/page.js")
+  const handler = {} as typeof import("..\\..\\app\\transcribe\\page.js")
   handler satisfies AppPageConfig<"/transcribe">
 }
 
 
 
-// Validate ../../src/pages/DashboardPage.tsx
+// Validate ..\..\src\pages\DashboardPage.tsx
 {
-  const handler = {} as typeof import("../../src/pages/DashboardPage.js")
+  const handler = {} as typeof import("..\\..\\src\\pages\\DashboardPage.js")
   handler satisfies PagesPageConfig
 }
 
-// Validate ../../src/pages/DoctorPage.tsx
+// Validate ..\..\src\pages\DoctorPage.tsx
 {
-  const handler = {} as typeof import("../../src/pages/DoctorPage.js")
+  const handler = {} as typeof import("..\\..\\src\\pages\\DoctorPage.js")
   handler satisfies PagesPageConfig
 }
 
-// Validate ../../src/pages/LoginPage.tsx
+// Validate ..\..\src\pages\LoginPage.tsx
 {
-  const handler = {} as typeof import("../../src/pages/LoginPage.js")
+  const handler = {} as typeof import("..\\..\\src\\pages\\LoginPage.js")
   handler satisfies PagesPageConfig
 }
 
-// Validate ../../src/pages/TranscribePage.tsx
+// Validate ..\..\src\pages\TranscribePage.tsx
 {
-  const handler = {} as typeof import("../../src/pages/TranscribePage.js")
+  const handler = {} as typeof import("..\\..\\src\\pages\\TranscribePage.js")
   handler satisfies PagesPageConfig
 }
 
 
 
-// Validate ../../app/layout.tsx
+// Validate ..\..\app\layout.tsx
 {
-  const handler = {} as typeof import("../../app/layout.js")
+  const handler = {} as typeof import("..\\..\\app\\layout.js")
   handler satisfies LayoutConfig<"/">
 }
