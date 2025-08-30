@@ -15,3 +15,9 @@ coverage/
 .DS_Store
 npm-debug.log*
 yarn-error.log*
+
+# remove local whisper code/models
+whisper.cpp/
+*.gguf
+*.bin
+*.pt
