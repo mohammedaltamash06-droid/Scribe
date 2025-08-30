@@ -1,0 +1,224 @@
+[
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/cc -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu11 -fPIC -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -o CMakeFiles/ggml-base.dir/ggml.c.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml.c",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml.c",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -o CMakeFiles/ggml-base.dir/ggml.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/cc -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu11 -fPIC -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -o CMakeFiles/ggml-base.dir/ggml-alloc.c.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-alloc.c",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-alloc.c",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -o CMakeFiles/ggml-base.dir/ggml-backend.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-backend.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-backend.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -o CMakeFiles/ggml-base.dir/ggml-opt.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-opt.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-opt.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -o CMakeFiles/ggml-base.dir/ggml-threading.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-threading.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-threading.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/cc -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu11 -fPIC -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -o CMakeFiles/ggml-base.dir/ggml-quants.c.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-quants.c",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-quants.c",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BUILD -DGGML_COMMIT=\\\"7745fcf3\\\" -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_VERSION=\\\"0.0.3066\\\" -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -o CMakeFiles/ggml-base.dir/gguf.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/gguf.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/gguf.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-base.dir/gguf.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/cc -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu11 -fPIC -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/ggml-cpu.c",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/ggml-cpu.c",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/ggml-cpu.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/ggml-cpu.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/repack.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/repack.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/hbm.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/hbm.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/cc -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu11 -fPIC -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/quants.c",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/quants.c",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/traits.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/traits.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/amx/amx.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/amx/amx.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/amx/mmq.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/amx/mmq.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/binary-ops.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/binary-ops.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/unary-ops.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/unary-ops.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/vec.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/vec.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/ops.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/ops.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/cc -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu11 -fPIC -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/x86/quants.c.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/arch/x86/quants.c",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/arch/x86/quants.c",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/x86/quants.c.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_OPENMP -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/.. -I/workspaces/Scribe/whisper.cpp/ggml/src/. -I/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -march=native -fopenmp -o CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/x86/repack.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/arch/x86/repack.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-cpu/arch/x86/repack.cpp",
+  "output": "ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/x86/repack.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/ggml/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_EXPORTS -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -o CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o -c /workspaces/Scribe/whisper.cpp/ggml/src/ggml-backend-reg.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/ggml/src/ggml-backend-reg.cpp",
+  "output": "ggml/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/src",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -DWHISPER_BUILD -DWHISPER_SHARED -DWHISPER_VERSION=\\\"1.7.6\\\" -Dwhisper_EXPORTS -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -o CMakeFiles/whisper.dir/whisper.cpp.o -c /workspaces/Scribe/whisper.cpp/src/whisper.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/src/whisper.cpp",
+  "output": "src/CMakeFiles/whisper.dir/whisper.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/tests",
+  "command": "/usr/bin/c++  -I/workspaces/Scribe/whisper.cpp/tests/../include -I/workspaces/Scribe/whisper.cpp/tests/../ggml/include -I/workspaces/Scribe/whisper.cpp/tests/../examples -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/test-vad.dir/test-vad.cpp.o -c /workspaces/Scribe/whisper.cpp/tests/test-vad.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/tests/test-vad.cpp",
+  "output": "tests/CMakeFiles/test-vad.dir/test-vad.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/tests",
+  "command": "/usr/bin/c++  -I/workspaces/Scribe/whisper.cpp/tests/../include -I/workspaces/Scribe/whisper.cpp/tests/../ggml/include -I/workspaces/Scribe/whisper.cpp/tests/../examples -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/test-vad-full.dir/test-vad-full.cpp.o -c /workspaces/Scribe/whisper.cpp/tests/test-vad-full.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/tests/test-vad-full.cpp",
+  "output": "tests/CMakeFiles/test-vad-full.dir/test-vad-full.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -fPIC -o CMakeFiles/common.dir/common.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/common.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/common.cpp",
+  "output": "examples/CMakeFiles/common.dir/common.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -fPIC -o CMakeFiles/common.dir/common-ggml.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/common-ggml.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/common-ggml.cpp",
+  "output": "examples/CMakeFiles/common.dir/common-ggml.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -fPIC -o CMakeFiles/common.dir/common-whisper.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/common-whisper.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/common-whisper.cpp",
+  "output": "examples/CMakeFiles/common.dir/common-whisper.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -fPIC -o CMakeFiles/common.dir/grammar-parser.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/grammar-parser.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/grammar-parser.cpp",
+  "output": "examples/CMakeFiles/common.dir/grammar-parser.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/cli",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -o CMakeFiles/whisper-cli.dir/cli.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/cli/cli.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/cli/cli.cpp",
+  "output": "examples/cli/CMakeFiles/whisper-cli.dir/cli.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/bench",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -o CMakeFiles/whisper-bench.dir/bench.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/bench/bench.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/bench/bench.cpp",
+  "output": "examples/bench/CMakeFiles/whisper-bench.dir/bench.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/server",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/whisper-server.dir/server.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/server/server.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/server/server.cpp",
+  "output": "examples/server/CMakeFiles/whisper-server.dir/server.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/quantize",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -o CMakeFiles/quantize.dir/quantize.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/quantize/quantize.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/quantize/quantize.cpp",
+  "output": "examples/quantize/CMakeFiles/quantize.dir/quantize.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/vad-speech-segments",
+  "command": "/usr/bin/c++ -DGGML_BACKEND_SHARED -DGGML_SHARED -DGGML_USE_CPU -I/workspaces/Scribe/whisper.cpp/examples -I/workspaces/Scribe/whisper.cpp/src/. -I/workspaces/Scribe/whisper.cpp/src/../include -I/workspaces/Scribe/whisper.cpp/ggml/src/../include -O3 -DNDEBUG -o CMakeFiles/vad-speech-segments.dir/speech.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/vad-speech-segments/speech.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/vad-speech-segments/speech.cpp",
+  "output": "examples/vad-speech-segments/CMakeFiles/vad-speech-segments.dir/speech.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/deprecation-warning",
+  "command": "/usr/bin/c++  -I/workspaces/Scribe/whisper.cpp/examples -O3 -DNDEBUG -o CMakeFiles/main.dir/deprecation-warning.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/deprecation-warning/deprecation-warning.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/deprecation-warning/deprecation-warning.cpp",
+  "output": "examples/deprecation-warning/CMakeFiles/main.dir/deprecation-warning.cpp.o"
+},
+{
+  "directory": "/workspaces/Scribe/whisper.cpp/build/examples/deprecation-warning",
+  "command": "/usr/bin/c++  -I/workspaces/Scribe/whisper.cpp/examples -O3 -DNDEBUG -o CMakeFiles/bench.dir/deprecation-warning.cpp.o -c /workspaces/Scribe/whisper.cpp/examples/deprecation-warning/deprecation-warning.cpp",
+  "file": "/workspaces/Scribe/whisper.cpp/examples/deprecation-warning/deprecation-warning.cpp",
+  "output": "examples/deprecation-warning/CMakeFiles/bench.dir/deprecation-warning.cpp.o"
+}
+]

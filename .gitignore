@@ -29,3 +29,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# models (do not commit)
+whisper.cpp/
+*.gguf
+*.bin
+*.pt
