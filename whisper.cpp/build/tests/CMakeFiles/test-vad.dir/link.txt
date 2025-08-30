@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG "CMakeFiles/test-vad.dir/test-vad.cpp.o" -o ../bin/test-vad  -Wl,-rpath,/workspaces/Scribe/whisper.cpp/build/src:/workspaces/Scribe/whisper.cpp/build/ggml/src ../examples/libcommon.a ../src/libwhisper.so.1.7.6 ../ggml/src/libggml.so ../ggml/src/libggml-cpu.so ../ggml/src/libggml-base.so -ldl 
