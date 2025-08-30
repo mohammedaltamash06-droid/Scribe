@@ -43,7 +43,7 @@ export default function TranscribePage() {
     });
   }, [toast]);
 
-  const startTranscription = async () => {
+  async function handleStart() {
     if (!uploadedFile) return;
 
     try {
@@ -51,60 +51,62 @@ export default function TranscribePage() {
       setProgress(0);
       setError(null);
 
-      // Create job
-      const jobResponse = await fetch("/api/jobs", { method: "POST" });
-      const { jobId: newJobId } = await jobResponse.json();
-      setJobId(newJobId);
-
-      // Upload file
-      const formData = new FormData();
-      formData.append("file", uploadedFile);
-      await fetch(`/api/jobs/${newJobId}/upload`, {
+      // 1) Create job (doctorId is optional)
+      const res1 = await fetch("/api/jobs", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doctorId: doctorId || "demo" })
+      });
+      const { jobId } = await res1.json();
+      if (!jobId) throw new Error("Failed to create job");
+      setJobId(jobId);
+
+      // 2) Upload file
+      const fd = new FormData();
+      fd.set("file", uploadedFile);
+      const res2 = await fetch(`/api/jobs/${jobId}/upload`, { method: "POST", body: fd });
+      const up = await res2.json();
+      if (!res2.ok) throw new Error(up?.error || "Upload failed");
+
+      // 3) Kick off processing
+      await fetch(`/api/jobs/${jobId}/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: mode || "Balanced" })
       });
 
-      // Start processing
-      await fetch(`/api/jobs/${newJobId}/process`, { method: "POST" });
+      // 4) Poll status until done
+      const poll = async () => {
+        const r = await fetch(`/api/jobs/${jobId}/status`);
+        const s = await r.json();
+        setJobStatus(s.state);
+        setProgress(s.progress || 0);
+        if (s.state === "done") return true;
+        if (s.state === "error") throw new Error(s.message || "Processing error");
+        await new Promise(r => setTimeout(r, 1500));
+        return poll();
+      };
 
-      // Poll for status
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusResponse = await fetch(`/api/jobs/${newJobId}/status`);
-          const { status, progress: jobProgress } = await statusResponse.json();
-          
-          setJobStatus(status);
-          setProgress(jobProgress || 0);
+      await poll();
 
-          if (status === "done") {
-            clearInterval(pollInterval);
-            // Fetch result
-            const resultResponse = await fetch(`/api/jobs/${newJobId}/result`);
-            const { transcript: transcriptData } = await resultResponse.json();
-            
-            // Apply corrections
-            const correctedTranscript = applyCorrections(transcriptData, corrections);
-            setTranscript(correctedTranscript);
-            
-            toast({
-              title: "Transcription complete",
-              description: "Your audio has been successfully transcribed",
-            });
-          } else if (status === "error") {
-            clearInterval(pollInterval);
-            setError("Transcription failed. Please try again.");
-          }
-        } catch (err) {
-          console.error("Polling error:", err);
-        }
-      }, 2500);
+      // 5) Fetch full transcript
+      const r3 = await fetch(`/api/jobs/${jobId}/result`);
+      const { lines } = await r3.json();
+
+      // TODO: set lines into your TranscriptList component state
+      setTranscript(lines);
 
     } catch (err) {
+      console.error(err);
       setJobStatus("error");
-      setError("Failed to start transcription. Please try again.");
-      console.error("Transcription error:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+      toast({
+        title: "Transcription error",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive"
+      });
     }
-  };
+  }
 
   const applyCorrections = (transcriptData: TranscriptLine[], corrections: Array<{ before: string; after: string }>) => {
     return transcriptData.map(line => ({
@@ -203,7 +205,7 @@ export default function TranscribePage() {
                 <h3 className="font-medium">{uploadedFile.name}</h3>
                 <p className="text-sm text-muted-foreground">Ready for transcription</p>
               </div>
-              <Button onClick={startTranscription} className="w-full">
+              <Button onClick={handleStart} className="w-full">
                 Transcribe Now
               </Button>
             </div>

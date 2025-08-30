@@ -1,29 +1,24 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Local env
-.env.local
-
-# Build & runtime artifacts
+# Next.js / Node
 .next/
-.venv/
+node_modules/
+out/
+.vercel/
+.turbo/
+dist/
+build/
+coverage/
+.cache/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Env & editor
+.env*
+.vscode/
 .DS_Store
+<<<<<<< HEAD
+npm-debug.log*
+yarn-error.log*
+
+# remove local whisper code/models
+=======
 *.suo
 *.ntvs*
 *.njsproj
@@ -31,6 +26,7 @@ dist-ssr
 *.sw?
 
 # models (do not commit)
+>>>>>>> feature/next-change
 whisper.cpp/
 *.gguf
 *.bin
