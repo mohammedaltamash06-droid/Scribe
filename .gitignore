@@ -13,10 +13,20 @@ coverage/
 .env*
 .vscode/
 .DS_Store
+<<<<<<< HEAD
 npm-debug.log*
 yarn-error.log*
 
 # remove local whisper code/models
+=======
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# models (do not commit)
+>>>>>>> feature/next-change
 whisper.cpp/
 *.gguf
 *.bin
