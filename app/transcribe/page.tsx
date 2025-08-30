@@ -24,6 +24,8 @@ export default function TranscribePage() {
   const [audioUrl, setAudioUrl] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<'idle' | 'uploaded' | 'queued' | 'running' | 'done' | 'error'>('idle');
+  // Enable Start button if a file is picked and not currently processing
+  const canStart = Boolean(uploadedFile) && !(['queued', 'running'].includes(jobStatus));
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [transcriptLines, setTranscriptLines] = useState<Array<{
@@ -151,7 +153,8 @@ export default function TranscribePage() {
   };
 
   const handleStartTranscription = async () => {
-    if (!uploadedFile || !doctorId.trim()) return;
+  if (!uploadedFile) return;
+  const doctor = doctorId.trim() || "demo";
     
     setJobStatus('queued');
     setProgress(0);
@@ -162,7 +165,8 @@ export default function TranscribePage() {
       // Create job
       const jobResponse = await fetch('/api/jobs', { 
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doctorId: doctor })
       });
       
       if (!jobResponse.ok) throw new Error('Failed to create job');
@@ -296,13 +300,13 @@ export default function TranscribePage() {
               <Label htmlFor="doctorId">Doctor ID</Label>
               <Input
                 id="doctorId"
-                placeholder="Enter doctor ID (e.g., johnson, chen, rodriguez)"
+                placeholder="Enter doctor ID (optional)"
                 value={doctorId}
                 onChange={(e) => setDoctorId(e.target.value)}
                 className="focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
               <p className="text-xs text-muted-foreground">
-                Required for applying personalized corrections and preferences
+                Optional: Used for personalized corrections and preferences
               </p>
             </div>
           </CardContent>
@@ -375,8 +379,9 @@ export default function TranscribePage() {
             {jobStatus === 'uploaded' && (
               <div className="flex justify-center">
                 <Button
+                  type="button"
                   onClick={handleStartTranscription}
-                  disabled={!uploadedFile || !doctorId.trim()}
+                  disabled={!uploadedFile}
                   size="lg"
                   className="bg-gradient-primary hover:opacity-90 shadow-medium transition-all duration-200"
                 >

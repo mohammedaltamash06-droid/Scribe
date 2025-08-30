@@ -34,7 +34,15 @@ export function UploadDropzone({ onFileSelected, uploadedFile }: UploadDropzoneP
         uploadedFile ? "border-medical-success bg-medical-success/5" : ""
       )}
     >
-      <input {...getInputProps()} />
+      <input
+        {...getInputProps()}
+        type="file"
+        accept="audio/*,video/*"
+        onChange={e => {
+          const f = e.target.files?.[0] || null;
+          if (f) onFileSelected(f);
+        }}
+      />
       <div className="p-8 text-center space-y-4">
         {uploadedFile ? (
           <>
