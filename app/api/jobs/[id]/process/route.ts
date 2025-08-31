@@ -1,65 +1,84 @@
+
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/app/api/_lib/supabase";
+import { supabaseAdmin } from "@/app/api/_lib/supabase";
+import { runTranscribe } from "@/app/api/_lib/engines";
 
-// load mock engine immediately; load openai lazily if selected
-import "@/app/api/_lib/engines/mock";
-import { getEngine } from "@/app/api/_lib/engines";
-
-export async function POST(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  const { id } = await ctx.params;
-  const supabase = supabaseServer();
+export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: jobId } = await params;
+  const supabase = supabaseAdmin();
 
   try {
-    // fetch job to get file_path
+    // 1) Load job
     const { data: job, error: jobErr } = await supabase
-      .from("jobs")
-      .select("file_path")
-      .eq("id", id)
-      .single();
-    if (jobErr) throw jobErr;
-    if (!job?.file_path) throw new Error("file_path missing on job");
+      .from("jobs").select("id,file_path").eq("id", jobId).single();
 
-    // signed URL for the audio
-    const { data: signed, error: signedErr } = await supabase.storage
-      .from("audio")
-      .createSignedUrl(job.file_path, 60 * 15);
-    if (signedErr) throw signedErr;
-
-    // mark running
-    await supabase.from("jobs").update({ state: "running" }).eq("id", id);
-
-    // choose engine
-    const engineName = process.env.TRANSCRIBE_ENGINE || "mock";
-    if (engineName === "openai") {
-      await import("@/app/api/_lib/engines/openai"); // lazy load
+    if (jobErr || !job) {
+      return NextResponse.json(
+        { error: "Job not found", detail: jobErr?.message },
+        { status: 404 }
+      );
     }
-    const engine = getEngine(engineName);
+    if (!job.file_path) {
+      return NextResponse.json(
+        { error: "Job has no file_path (upload step missing)" },
+        { status: 400 }
+      );
+    }
 
-    // transcribe
-    const result = await engine.transcribe({ audioUrl: signed.signedUrl, jobId: id });
+    // 2) Signed URL for audio
+    const { data: signed, error: signErr } = await supabase
+      .storage.from("audio").createSignedUrl(job.file_path, 60 * 30);
 
-    // save transcript JSON in results bucket
-    const payload = JSON.stringify(
-      result.lines ? { lines: result.lines } : { text: result.text }
-    );
-    const up = await supabase.storage
-      .from("results")
-      .upload(`${id}/transcript.json`, Buffer.from(payload), {
+    if (signErr || !signed?.signedUrl) {
+      return NextResponse.json(
+        { error: "Failed to create signed URL", detail: signErr?.message },
+        { status: 500 }
+      );
+    }
+
+    // 3) Mark running
+    await supabase.from("jobs").update({ state: "running" }).eq("id", jobId);
+
+    // 4) Run engine
+    let lines: string[] = [];
+    try {
+      const r = await runTranscribe({ audioUrl: signed.signedUrl });
+      lines = r.lines || [];
+    } catch (e: any) {
+      await supabase.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json(
+        { error: "Transcription engine failed", detail: String(e?.message ?? e) },
+        { status: 500 }
+      );
+    }
+
+    // 5) Save result JSON
+    const json = Buffer.from(JSON.stringify({ lines }, null, 2));
+    const resultKey = `jobs/${jobId}/transcript.json`;
+    const { error: putErr } = await supabase
+      .storage.from("results").upload(resultKey, json, {
         contentType: "application/json",
         upsert: true,
       });
-    if (up.error) throw up.error;
 
-    // mark done
-    await supabase.from("jobs").update({ state: "done" }).eq("id", id);
+    if (putErr) {
+      await supabase.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json(
+        { error: "Failed to save results", detail: putErr.message },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json({ ok: true });
+    await supabase.from("jobs").update({ state: "done" }).eq("id", jobId);
+    return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e: any) {
-    console.error(e);
-    await supabaseServer().from("jobs").update({ state: "error" }).eq("id", id);
-    return NextResponse.json({ error: e?.message || "process failed" }, { status: 500 });
+    // last-resort catch
+    await supabase.from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json(
+      { error: "Unhandled server error", detail: String(e?.message ?? e) },
+      { status: 500 }
+    );
   }
 }
+
+export const dynamic = "force-dynamic";

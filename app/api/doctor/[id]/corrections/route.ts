@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/app/api/_lib/supabase";
-
-function ensureDoctorId(id: string) { return id?.trim(); }
+import { supabaseAdmin } from "@/app/api/_lib/supabase";
 
 export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const doctorId = ensureDoctorId(id);
-  const supabase = supabaseServer();
+  const doctorId = id?.trim();
+  const supabase = supabaseAdmin();
 
   await supabase.from("doctors").upsert({ id: doctorId }); // ensure doctor exists
   const { data, error } = await supabase
@@ -21,10 +19,10 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const doctorId = ensureDoctorId(id);
+  const doctorId = id?.trim();
   const body = await req.json().catch(() => ({}));
   const items: Array<{ before: string; after: string }> = Array.isArray(body?.items) ? body.items : [];
-  const supabase = supabaseServer();
+  const supabase = supabaseAdmin();
 
   await supabase.from("doctors").upsert({ id: doctorId });
   // overwrite semantics: delete then insert

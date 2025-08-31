@@ -1,26 +1,18 @@
 import OpenAI from "openai";
-import { TranscribeEngine, registerEngine } from "./index";
+import { toFile } from "openai/uploads";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const MODEL = process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe"; // or "whisper-1"
 
-const OPENAI_ENGINE: TranscribeEngine = {
-  name: "openai",
-  async transcribe({ audioUrl }) {
-    // Whisper expects a file stream; fetch signed URL as a Blob and create a File
-    const res = await fetch(audioUrl);
-    const blob = await res.blob();
-    // Use a File object for compatibility with OpenAI SDK
-    const file = new File([blob], "audio.wav", { type: blob.type || "audio/wav" });
+export async function openaiTranscribe({ audioUrl }: { audioUrl: string }) {
+  if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
 
-    const result = await openai.audio.transcriptions.create({
-      file,
-      model: "whisper-1",
-      response_format: "text",
-    });
+  const dl = await fetch(audioUrl);
+  if (!dl.ok) throw new Error(`Audio download failed (${dl.status})`);
+  const file = await toFile(Buffer.from(await dl.arrayBuffer()), "audio");
 
-    return { text: (result as any).text || "" };
-  },
-};
-
-registerEngine(OPENAI_ENGINE);
-export default OPENAI_ENGINE;
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const tr = await client.audio.transcriptions.create({ file, model: MODEL });
+  const text: string = (tr as any).text ?? String(tr);
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  return { lines };
+}

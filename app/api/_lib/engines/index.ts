@@ -1,20 +1,22 @@
-export type Transcript = { text: string; lines?: string[] };
+// Utility to run the selected engine
+import openaiTranscribe from "./openai";
+import mockTranscribe from "./mock";
+import { whisperLocalTranscribe } from "./whisper-local";
 
-export interface TranscribeEngine {
-  name: string;
-  transcribe(opts: { audioUrl: string; jobId: string }): Promise<Transcript>;
-}
+type RunArgs = { audioUrl: string };
 
-// registry (add engines here)
-const engines: Record<string, TranscribeEngine> = {};
+export async function runTranscribe({ audioUrl }: RunArgs): Promise<{ lines: string[] }> {
+  const eng = (process.env.TRANSCRIBE_ENGINE || "mock").toLowerCase();
 
-export function registerEngine(engine: TranscribeEngine) {
-  engines[engine.name] = engine;
-}
+  switch (eng) {
+    case "openai":
+      return openaiTranscribe({ audioUrl });
+    case "whisper-local":
+    case "local":
+    case "whisper":
+      return whisperLocalTranscribe({ audioUrl });
+    default:
+      return mockTranscribe();
+  }
 
-export function getEngine(name?: string): TranscribeEngine {
-  const key = (name || process.env.TRANSCRIBE_ENGINE || "mock").toLowerCase();
-  const engine = engines[key];
-  if (!engine) throw new Error(`Transcribe engine "${key}" not found`);
-  return engine;
 }

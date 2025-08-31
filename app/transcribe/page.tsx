@@ -1,11 +1,31 @@
 "use client";
+// --- normalize any result shape to string[] ---
+function normalizeTranscriptPayload(data: any): string[] {
+  const clean = (s: any) => String(s ?? "").replace(/\s+/g, " ").trim();
+
+  if (Array.isArray(data?.lines) && data.lines.length) {
+    return data.lines.map(clean).filter(Boolean);
+  }
+  if (Array.isArray(data?.segments) && data.segments.length) {
+    return data.segments
+      .map((s: any) => clean(typeof s === "string" ? s : s?.text))
+      .filter(Boolean);
+  }
+  if (typeof data?.text === "string" && data.text.trim()) {
+    return data.text
+      .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
+      .map(clean)
+      .filter(Boolean);
+  }
+  return [];
+}
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navigation } from "@/components/ui/navigation";
 import { UploadDropzone } from "@/components/transcribe/UploadDropzone";
 import { AudioPlayer } from "@/components/transcribe/AudioPlayer";
-import { TranscriptList } from "@/components/transcribe/TranscriptList";
+import TranscriptList from "@/components/transcribe/TranscriptList";
 import { RightRailTabs } from "@/components/transcribe/RightRailTabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +48,8 @@ export default function TranscribePage() {
   const canStart = Boolean(uploadedFile) && !(['queued', 'running'].includes(jobStatus));
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [transcriptLines, setTranscriptLines] = useState<Array<{
-    id: string;
-    text: string;
-    confidence: 'high' | 'medium' | 'low';
-    timestamp: number;
-  }>>([]);
+  // Change transcriptLines state to string[]
+  const [transcriptLines, setTranscriptLines] = useState<string[]>([]);
   const [mode, setMode] = useState<'lite' | 'balanced' | 'pro'>('balanced');
   const [doctorCorrections, setDoctorCorrections] = useState<Array<{
     id: string;
@@ -74,20 +90,29 @@ export default function TranscribePage() {
           setProgress(data.progress || 0);
           
           if (data.status === 'done') {
-            // Fetch transcript result
-            const resultResponse = await fetch(`/api/jobs/${jobId}/result`);
+            // Fetch transcript result and normalize
+            const resultResponse = await fetch(`/api/jobs/${jobId}/result`, { cache: "no-store" });
             if (resultResponse.ok) {
               const resultData = await resultResponse.json();
-              let lines = resultData.lines || [];
-              
-              // Apply doctor corrections automatically with improved logic
-              lines = applyDoctorCorrections(lines, doctorCorrections);
-              
-              setTranscriptLines(lines);
+
+              // 1) normalize to plain strings
+              const normalized = normalizeTranscriptPayload(resultData);
+
+              // 2) (Optional) keep doctor correction output as strings
+
+              const finalLines = (typeof applyDoctorCorrections === "function"
+                ? applyDoctorCorrections(normalized, doctorCorrections)
+                : normalized
+              );
+
+              console.log("Normalized lines:", finalLines); // should be ["Every …", "…"]
+              setTranscriptLines(finalLines);
+
               toast({
                 title: "Transcription Complete",
                 description: "Your transcript is ready for review."
               });
+              return; // stop any polling after done so nothing overwrites state
             }
           } else if (data.status === 'error') {
             setErrorMessage(data.error || 'Unknown error occurred');
@@ -110,21 +135,20 @@ export default function TranscribePage() {
   }, [jobId, jobStatus, doctorCorrections, toast]);
 
   // Improved doctor corrections with case-insensitive whole-word replacement
-  const applyDoctorCorrections = (lines: any[], corrections: any[]) => {
+  function applyDoctorCorrections(lines: string[], corrections?: any[]): string[] {
+    if (!corrections) return lines;
     return lines.map(line => {
-      let correctedText = line.text;
+      let correctedText = String(line);
       corrections.forEach(correction => {
         if (correction.before && correction.after) {
-          // Escape special regex characters in the search term
           const escapedBefore = correction.before.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          // Create regex for case-insensitive whole-word replacement
           const regex = new RegExp(`\\b${escapedBefore}\\b`, 'gi');
           correctedText = correctedText.replace(regex, correction.after);
         }
       });
-      return { ...line, text: correctedText };
+      return correctedText;
     });
-  };
+  }
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -153,64 +177,63 @@ export default function TranscribePage() {
   };
 
   const handleStartTranscription = async () => {
-  if (!uploadedFile) return;
-  const doctor = doctorId.trim() || "demo";
-    
-    setJobStatus('queued');
-    setProgress(0);
-    setTranscriptLines([]);
-    setErrorMessage("");
-    
-    try {
-      // Create job
-      const jobResponse = await fetch('/api/jobs', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doctorId: doctor })
-      });
-      
-      if (!jobResponse.ok) throw new Error('Failed to create job');
-      
-      const jobData = await jobResponse.json();
-      setJobId(jobData.jobId);
-      
-      // Upload file
-      const formData = new FormData();
-      formData.set("file", uploadedFile);
-      
-      const uploadResponse = await fetch(`/api/jobs/${jobData.jobId}/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!uploadResponse.ok) throw new Error('Failed to upload file');
-      
-      // Start processing
-      const processResponse = await fetch(`/api/jobs/${jobData.jobId}/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode })
-      });
-      
-      if (!processResponse.ok) throw new Error('Failed to start processing');
-      
-      setJobStatus('running');
-      toast({
-        title: "Transcription Started",
-        description: "Processing your audio file..."
-      });
-      
-    } catch (error) {
-      console.error('Transcription error:', error);
-      setJobStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
-      toast({
-        title: "Error",
-        description: "Failed to start transcription.",
-        variant: "destructive"
-      });
+  if (!uploadedFile) {
+    toast({ title: "Choose a file first", variant: "destructive" });
+    return;
+  }
+  setJobStatus('queued');
+  setProgress(0);
+  setTranscriptLines([]);
+  setErrorMessage("");
+  try {
+    // Create job
+    const doctor = doctorId.trim() || "demo";
+    const jobResponse = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doctorId: doctor })
+    });
+    if (!jobResponse.ok) {
+      const err = await jobResponse.json().catch(() => ({}));
+      throw new Error(`Failed to create job: ${err.detail ?? jobResponse.statusText}`);
     }
-  };
+    const jobData = await jobResponse.json();
+    setJobId(jobData.jobId);
+
+    // 1) upload
+    const fd = new FormData();
+    fd.append("file", uploadedFile);
+    const up = await fetch(`/api/jobs/${jobData.jobId}/upload`, { method: "POST", body: fd });
+    if (!up.ok) {
+      const err = await up.json().catch(() => ({}));
+      throw new Error(`Upload failed: ${err.error ?? up.statusText}`);
+    }
+
+    // 2) process
+    const processRes = await fetch(`/api/jobs/${jobData.jobId}/process`, { method: "POST" });
+    if (!processRes.ok) {
+      const err = await processRes.json().catch(() => ({}));
+      throw new Error(
+        `Failed to start processing: ${err.error || processRes.statusText}${err.detail ? ` — ${err.detail}` : ""}`
+      );
+    }
+
+    setJobStatus("running");
+    toast({
+      title: "Transcription Started",
+      description: "Processing your audio file..."
+    });
+  } catch (error) {
+    console.error('Transcription error:', error);
+    setJobStatus('error');
+    setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
+    toast({
+      title: "Error",
+      description: "Failed to start transcription.",
+      variant: "destructive"
+    });
+  }
+};
 
   const handleRetry = () => {
     setJobStatus('uploaded');
@@ -219,8 +242,8 @@ export default function TranscribePage() {
   };
 
   const handleEditLine = (index: number, newText: string) => {
-    setTranscriptLines(prev => 
-      prev.map((line, i) => i === index ? { ...line, text: newText } : line)
+    setTranscriptLines(prev =>
+      prev.map((line, i) => i === index ? newText : line)
     );
   };
 
@@ -424,9 +447,10 @@ export default function TranscribePage() {
                   </Badge>
                 </CardHeader>
                 <CardContent>
+                  {/* Debug: see transcript lines in console */}
+                  {(() => { console.log("Transcript lines state:", transcriptLines); return null; })()}
                   <TranscriptList 
                     lines={transcriptLines}
-                    onEditLine={handleEditLine}
                   />
                 </CardContent>
               </Card>

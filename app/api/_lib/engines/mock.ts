@@ -1,17 +1,10 @@
-import { TranscribeEngine, registerEngine } from "./index";
-
-const mock: TranscribeEngine = {
-  name: "mock",
-  async transcribe() {
-    const lines = [
-      "Subjective: patient reports mild chest discomfort.",
-      "Objective: HR 78, BP 128/82, afebrile.",
-      "Assessment: atypical chest pain.",
-      "Plan: ECG, troponin, prescribe omeprazole 20mg daily."
-    ];
-    return { text: lines.join("\n"), lines };
-  },
-};
-
-registerEngine(mock);
-export default mock;
+export default async function mockTranscribe(): Promise<{ lines: string[] }> {
+  // No audio fetch; always succeed
+  return {
+    lines: [
+      "[mock] Transcription complete.",
+      "This is a placeholder line to prove the pipeline works.",
+      "Replace TRANSCRIBE_ENGINE=mock with openai when ready."
+    ],
+  };
+}

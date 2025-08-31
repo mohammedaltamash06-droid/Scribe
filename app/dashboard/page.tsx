@@ -7,15 +7,16 @@ import { JobsTable } from "@/components/dashboard/JobsTable";
 import { MiniChart } from "@/components/dashboard/MiniChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart3, 
-  FileAudio, 
-  Clock, 
-  CheckCircle, 
+import {
+  BarChart3,
+  FileAudio,
+  Clock,
+  CheckCircle,
   AlertCircle,
   TrendingUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import CodeList from '@/components/doctor/CodeList';
 
 interface DashboardStats {
   totalJobs: number;
@@ -28,6 +29,9 @@ interface DashboardStats {
     completion: string;
     completionUp: boolean;
   };
+  dx_count: number;
+  rx_count: number;
+  proc_count: number;
 }
 
 interface TimeseriesData {
@@ -46,7 +50,7 @@ export default function DashboardPage() {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch dashboard summary
         const summaryResponse = await fetch('/api/dashboard/summary');
         if (summaryResponse.ok) {
@@ -65,9 +69,12 @@ export default function DashboardPage() {
               jobsUp: true,
               completion: "+5%",
               completionUp: true
-            }
+            },
+            dx_count: 45,
+            rx_count: 30,
+            proc_count: 25
           });
-          
+
           // Mock timeseries data
           const mockTimeseries = Array.from({ length: 30 }, (_, i) => {
             const date = new Date();
@@ -97,11 +104,13 @@ export default function DashboardPage() {
 
   const completionRate = stats ? ((stats.completedJobs / stats.totalJobs) * 100).toFixed(1) : "0";
 
+  const doctorId = 'DOCTOR123'; // <- replace with real selected doctor
+
   return (
     <main className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 space-y-6">
         <Navigation />
-        
+
         {/* Header */}
         <Card className="rounded-xl shadow-soft">
           <CardHeader>
@@ -168,13 +177,15 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {!loading && timeseries.length > 0 ? (
-                  <MiniChart 
+                  <MiniChart
                     data={timeseries.map(item => ({
                       date: item.date,
                       value: item.jobs,
                       completions: item.completions
-                    }))} 
-                    title="Daily Jobs"
+                    }))}
+                    type="bar"
+                    dataKey="value"
+                    xAxisKey="date"
                   />
                 ) : (
                   <div className="h-64 flex items-center justify-center text-muted-foreground">
@@ -227,7 +238,82 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Code Lists for Doctor */}
+        <div className="space-y-8 p-6">
+          <CodeList doctorId={doctorId} kind="dx" title="Diagnoses" />
+          <CodeList doctorId={doctorId} kind="rx" title="Medications" />
+          <CodeList doctorId={doctorId} kind="proc" title="Procedures" />
+        </div>
+
+        {/* Simple Code List Widgets */}
+        <div className="space-y-8 p-6">
+          <CodeListSimple doctorId={doctorId} kind="dx" label="Diagnoses" />
+          <CodeListSimple doctorId={doctorId} kind="rx" label="Medications" />
+          <CodeListSimple doctorId={doctorId} kind="proc" label="Procedures" />
+        </div>
+
+        {/* Dashboard Summary Widget */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="p-4 bg-white rounded shadow">
+            <h3 className="font-bold">DX</h3>
+            <p>{stats?.dx_count}</p>
+          </div>
+          <div className="p-4 bg-white rounded shadow">
+            <h3 className="font-bold">RX</h3>
+            <p>{stats?.rx_count}</p>
+          </div>
+          <div className="p-4 bg-white rounded shadow">
+            <h3 className="font-bold">PROC</h3>
+            <p>{stats?.proc_count}</p>
+          </div>
+        </div>
       </div>
     </main>
+  );
+}
+
+interface CodeListSimpleProps {
+  doctorId: string;
+  kind: 'dx' | 'rx' | 'proc';
+  label: string;
+}
+
+interface ApiItem {
+  id: number;
+  doctor_id: string;
+  code: string;
+  text: string;
+  created_at?: string;
+}
+
+function CodeListSimple({ doctorId, kind, label }: CodeListSimpleProps) {
+  const [items, setItems] = useState<ApiItem[]>([]);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    fetch(`/api/doctor/${doctorId}/${kind}?q=${query}&limit=20&offset=0`)
+      .then(r => r.json())
+      .then(data => setItems(data.items as ApiItem[]));
+  }, [doctorId, kind, query]);
+
+  return (
+    <div className="mb-8">
+      <h2 className="font-semibold mb-2">{label}</h2>
+      <input
+        type="text"
+        placeholder={`Search ${label}`}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        className="border p-2 rounded mb-4 w-full max-w-md"
+      />
+      <ul>
+        {items.map(row => (
+          <li key={row.id} className="mb-1">
+            <strong>{row.code}</strong> – {row.text}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
