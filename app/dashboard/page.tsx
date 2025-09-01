@@ -239,35 +239,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Code Lists for Doctor */}
-        <div className="space-y-8 p-6">
-          <CodeList doctorId={doctorId} kind="dx" title="Diagnoses" />
-          <CodeList doctorId={doctorId} kind="rx" title="Medications" />
-          <CodeList doctorId={doctorId} kind="proc" title="Procedures" />
-        </div>
-
-        {/* Simple Code List Widgets */}
-        <div className="space-y-8 p-6">
-          <CodeListSimple doctorId={doctorId} kind="dx" label="Diagnoses" />
-          <CodeListSimple doctorId={doctorId} kind="rx" label="Medications" />
-          <CodeListSimple doctorId={doctorId} kind="proc" label="Procedures" />
-        </div>
-
-        {/* Dashboard Summary Widget */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="p-4 bg-white rounded shadow">
-            <h3 className="font-bold">DX</h3>
-            <p>{stats?.dx_count}</p>
-          </div>
-          <div className="p-4 bg-white rounded shadow">
-            <h3 className="font-bold">RX</h3>
-            <p>{stats?.rx_count}</p>
-          </div>
-          <div className="p-4 bg-white rounded shadow">
-            <h3 className="font-bold">PROC</h3>
-            <p>{stats?.proc_count}</p>
-          </div>
-        </div>
+  {/* DX/RX/PROC blocks removed. Only KPIs and Recent Jobs are shown as per new dashboard spec. */}
       </div>
     </main>
   );

@@ -1,31 +1,67 @@
 "use client";
-// --- normalize any result shape to string[] ---
-function normalizeTranscriptPayload(data: any): string[] {
-  const clean = (s: any) => String(s ?? "").replace(/\s+/g, " ").trim();
+import React from "react";
 
-  if (Array.isArray(data?.lines) && data.lines.length) {
-    return data.lines.map(clean).filter(Boolean);
-  }
-  if (Array.isArray(data?.segments) && data.segments.length) {
-    return data.segments
-      .map((s: any) => clean(typeof s === "string" ? s : s?.text))
-      .filter(Boolean);
-  }
-  if (typeof data?.text === "string" && data.text.trim()) {
-    return data.text
-      .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
-      .map(clean)
-      .filter(Boolean);
-  }
-  return [];
-}
+
+
+// --- normalize any result shape to Line[] ---
 
 import { useState, useEffect } from "react";
+
+// --- Helper Components ---
+type AudioCardProps = { uploadedFile: File | null };
+function AudioCard(props: AudioCardProps) {
+  const { uploadedFile } = props;
+  const [audioUrl, setAudioUrl] = React.useState("");
+  React.useEffect(() => {
+    if (uploadedFile) {
+      const url = URL.createObjectURL(uploadedFile);
+      setAudioUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setAudioUrl("");
+    }
+  }, [uploadedFile]);
+  return (
+    <section className="rounded-2xl border bg-card text-card-foreground shadow-sm p-4">
+      <h3 className="text-sm font-semibold mb-2">Audio Player</h3>
+      {uploadedFile && audioUrl ? (
+        <AudioPlayer src={audioUrl} />
+      ) : (
+        <div className="text-muted-foreground text-sm">Upload a file to see audio controls.</div>
+      )}
+    </section>
+  );
+}
+
+type TranscriptCardProps = {
+  transcript: Line[];
+  jobStatus: "idle" | "uploaded" | "queued" | "running" | "done" | "error";
+  onExport: () => void;
+};
+function TranscriptCard(props: TranscriptCardProps) {
+  const { transcript, jobStatus, onExport } = props;
+  return (
+    <section className="rounded-2xl border bg-card text-card-foreground shadow-sm p-4">
+      <div className="flex items-center justify-between mb-2 gap-3">
+        <h3 className="text-sm font-semibold">Medical Transcript</h3>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">{transcript.length} lines</span>
+        </div>
+      </div>
+
+      {jobStatus === "done" && transcript.length > 0 ? (
+        <TranscriptList lines={transcript} />
+      ) : (
+        <div className="text-muted-foreground text-sm">No transcript available.</div>
+      )}
+    </section>
+  );
+}
 import Link from "next/link";
 import { Navigation } from "@/components/ui/navigation";
 import { UploadDropzone } from "@/components/transcribe/UploadDropzone";
 import { AudioPlayer } from "@/components/transcribe/AudioPlayer";
-import TranscriptList from "@/components/transcribe/TranscriptList";
+import TranscriptList, { Line, normalizeLines } from "@/components/transcribe/TranscriptList";
 import { RightRailTabs } from "@/components/transcribe/RightRailTabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,8 +84,8 @@ export default function TranscribePage() {
   const canStart = Boolean(uploadedFile) && !(['queued', 'running'].includes(jobStatus));
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  // Change transcriptLines state to string[]
-  const [transcriptLines, setTranscriptLines] = useState<string[]>([]);
+  // Change transcriptLines state to Line[]
+  const [transcriptLines, setTranscriptLines] = useState<Line[]>([]);
   const [mode, setMode] = useState<'lite' | 'balanced' | 'pro'>('balanced');
   const [doctorCorrections, setDoctorCorrections] = useState<Array<{
     id: string;
@@ -95,17 +131,17 @@ export default function TranscribePage() {
             if (resultResponse.ok) {
               const resultData = await resultResponse.json();
 
-              // 1) normalize to plain strings
-              const normalized = normalizeTranscriptPayload(resultData);
+              // 1) normalize to Line[]
+              const normalized: Line[] = normalizeLines(resultData?.lines ?? resultData);
+              console.log("Normalized lines:", normalized);
 
-              // 2) (Optional) keep doctor correction output as strings
-
-              const finalLines = (typeof applyDoctorCorrections === "function"
+              // 2) (Optional) keep doctor correction output as Line[]
+              const finalLines: Line[] = (typeof applyDoctorCorrections === "function"
                 ? applyDoctorCorrections(normalized, doctorCorrections)
                 : normalized
               );
 
-              console.log("Normalized lines:", finalLines); // should be ["Every …", "…"]
+              console.log("Normalized lines:", finalLines); // should be [{text: "Every …"}, ...]
               setTranscriptLines(finalLines);
 
               toast({
@@ -135,10 +171,10 @@ export default function TranscribePage() {
   }, [jobId, jobStatus, doctorCorrections, toast]);
 
   // Improved doctor corrections with case-insensitive whole-word replacement
-  function applyDoctorCorrections(lines: string[], corrections?: any[]): string[] {
+  function applyDoctorCorrections(lines: Line[], corrections?: any[]): Line[] {
     if (!corrections) return lines;
     return lines.map(line => {
-      let correctedText = String(line);
+      let correctedText = String(line.text);
       corrections.forEach(correction => {
         if (correction.before && correction.after) {
           const escapedBefore = correction.before.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -146,7 +182,7 @@ export default function TranscribePage() {
           correctedText = correctedText.replace(regex, correction.after);
         }
       });
-      return correctedText;
+      return { id: line.id, text: correctedText };
     });
   }
 
@@ -183,7 +219,7 @@ export default function TranscribePage() {
   }
   setJobStatus('queued');
   setProgress(0);
-  setTranscriptLines([]);
+  setTranscriptLines([] as Line[]);
   setErrorMessage("");
   try {
     // Create job
@@ -243,7 +279,7 @@ export default function TranscribePage() {
 
   const handleEditLine = (index: number, newText: string) => {
     setTranscriptLines(prev =>
-      prev.map((line, i) => i === index ? newText : line)
+      prev.map((line, i) => i === index ? { ...line, text: newText } : line)
     );
   };
 
@@ -263,7 +299,7 @@ export default function TranscribePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: `Transcription - ${doctorId} - ${new Date().toLocaleDateString()}`,
-          lines: transcriptLines
+          lines: transcriptLines.map((l: Line) => l.text)
         })
       });
 
@@ -416,65 +452,28 @@ export default function TranscribePage() {
           </CardContent>
         </Card>
 
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left: Audio Player */}
-          <div className="lg:col-span-1">
-            {uploadedFile ? (
-                <AudioPlayer 
-                  src={audioUrl}
-                  onBack15={() => console.log('Back 15s')}
-                  onPlayPause={(playing) => console.log('Play/Pause:', playing)}
-                />
-            ) : (
-              <Card className="rounded-xl shadow-soft">
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  <Mic className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Upload a file to see audio controls</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
 
-          {/* Center: Transcript */}
-          <div className="lg:col-span-2">
-            {transcriptLines.length > 0 ? (
-              <Card className="rounded-xl shadow-soft">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Medical Transcript</CardTitle>
-                  <Badge variant="secondary" className="text-medical-success bg-medical-success/10 border-medical-success/20">
-                    {transcriptLines.length} lines
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  {/* Debug: see transcript lines in console */}
-                  {(() => { console.log("Transcript lines state:", transcriptLines); return null; })()}
-                  <TranscriptList 
-                    lines={transcriptLines}
-                  />
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="rounded-xl shadow-soft">
-                <CardHeader>
-                  <CardTitle>Medical Transcript</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Mic className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No transcript available</p>
-                    <p className="text-sm">Upload an audio file and start transcription to see results</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+  {/* Main 3-col layout */}
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Transcript spans two columns */}
+          <section className="lg:col-span-2 order-2 lg:order-1">
+            <TranscriptCard
+              transcript={transcriptLines}
+              jobStatus={jobStatus}
+              onExport={handleExport}
+            />
+          </section>
 
-          {/* Right Rail */}
-          <div className="lg:col-span-1">
+          {/* Right rail: audio + corrections/detected */}
+          <aside className="order-1 lg:order-2 space-y-4">
+            <AudioCard uploadedFile={uploadedFile} />
             <RightRailTabs doctorId={doctorId} />
-          </div>
+          </aside>
         </div>
+
+
+
+// ...existing code...
 
         {/* Footer Bar */}
         <Card className="rounded-xl shadow-soft">

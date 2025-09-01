@@ -1,22 +1,38 @@
 // Utility to run the selected engine
-import openaiTranscribe from "./openai";
-import mockTranscribe from "./mock";
+import { openaiTranscribe } from "./openai";
 import { whisperLocalTranscribe } from "./whisper-local";
+import { mockTranscribe } from "./mock";
 
-type RunArgs = { audioUrl: string };
+export type EngineArgs = {
+  /** Either a URL to fetch the audio (recommended) or a raw buffer (fallback) */
+  fileUrl?: string;
+  arrayBuffer?: ArrayBuffer;
 
-export async function runTranscribe({ audioUrl }: RunArgs): Promise<{ lines: string[] }> {
-  const eng = (process.env.TRANSCRIBE_ENGINE || "mock").toLowerCase();
+  /** Optional hints */
+  language?: string;
+  model?: string; // e.g. "gpt-4o-mini-transcribe" or whisper variant
+};
 
-  switch (eng) {
-    case "openai":
-      return openaiTranscribe({ audioUrl });
-    case "whisper-local":
-    case "local":
-    case "whisper":
-      return whisperLocalTranscribe({ audioUrl });
-    default:
-      return mockTranscribe();
-  }
+export type EngineName = "openai" | "whisper-local" | "mock";
 
+type EngineFn = (args: EngineArgs) => Promise<{
+  /** Array of lines/segments ready for UI */
+  lines: Array<{ start?: number; end?: number; text: string }>;
+}>;
+
+export const engines: Record<EngineName, EngineFn> = {
+  openai: openaiTranscribe,
+  "whisper-local": whisperLocalTranscribe,
+  mock: mockTranscribe,
+};
+
+export function pickEngine(name?: string): EngineFn {
+  const key = (name ?? process.env.TRANSCRIBE_ENGINE ?? "mock") as EngineName;
+  return engines[key] ?? mockTranscribe;
+}
+
+/** One-shot helper most routes will call */
+export async function runTranscribe(args: EngineArgs, name?: string) {
+  const fn = pickEngine(name);
+  return fn(args);
 }

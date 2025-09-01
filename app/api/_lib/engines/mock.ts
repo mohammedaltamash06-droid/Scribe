@@ -1,10 +1,11 @@
-export default async function mockTranscribe(): Promise<{ lines: string[] }> {
-  // No audio fetch; always succeed
+import { EngineArgs } from "./index";
+
+export async function mockTranscribe(_: EngineArgs = {}) {
+  await new Promise(r => setTimeout(r, 300)); // tiny delay like a real call
   return {
     lines: [
-      "[mock] Transcription complete.",
-      "This is a placeholder line to prove the pipeline works.",
-      "Replace TRANSCRIBE_ENGINE=mock with openai when ready."
+      { text: "This is a mock transcript line 1." },
+      { text: "This is a mock transcript line 2." },
     ],
   };
 }
