@@ -483,20 +483,22 @@ export default function TranscribePage() {
 
 
   {/* Main 3-col layout */}
-  <div className="mt-4 grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4 items-stretch">
-    <div className="min-h-0">
-      <TranscriptPanel
-        lines={transcriptLines}
-        isLoading={jobStatus === "queued" || jobStatus === "running"}
-        onLinesChange={setTranscriptLines}
-        isUploaded={jobStatus === "uploaded" || jobStatus === "running" || jobStatus === "done"}
-      />
-    </div>
-    <div className="flex flex-col gap-4">
-      <AudioCard uploadedFile={uploadedFile} />
-      <RightRailTabs doctorId={doctorId} />
-    </div>
-  </div>
+  <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+          {/* Transcript spans two columns */}
+          <section className="lg:col-span-2 order-2 lg:order-1 h-full flex flex-col">
+            <TranscriptPanel
+              lines={transcriptLines}
+              isLoading={jobStatus === "queued" || jobStatus === "running"}
+              onLinesChange={setTranscriptLines}
+            />
+          </section>
+
+          {/* Right rail: audio + corrections/detected */}
+          <aside className="order-1 lg:order-2 space-y-4">
+            <AudioCard uploadedFile={uploadedFile} />
+            <RightRailTabs doctorId={doctorId} />
+          </aside>
+        </div>
 
         {/* Footer Bar */}
         <Card className="rounded-xl shadow-soft">
