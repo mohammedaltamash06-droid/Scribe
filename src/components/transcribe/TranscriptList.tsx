@@ -54,25 +54,22 @@ export default function TranscriptList({ lines }: { lines: Line[] }) {
   return (
     <div className="space-y-3">
       {lines.map((line) => (
-        <div key={line.id} className="p-4 rounded-lg border bg-white">
-          <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-            {line.start !== undefined && (
-              <span>Start: {line.start.toFixed(2)}s</span>
-            )}
-            {line.end !== undefined && (
-              <span>End: {line.end.toFixed(2)}s</span>
-            )}
-            {line.speaker && (
-              <span>Speaker: {line.speaker}</span>
-            )}
+          <div key={line.id} className="p-4 rounded-lg border bg-white">
+            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+              {line.start !== undefined && (
+                <span>Start: {line.start.toFixed(2)}s</span>
+              )}
+              {line.end !== undefined && (
+                <span>End: {line.end.toFixed(2)}s</span>
+              )}
+              {line.speaker && (
+                <span>Speaker: {line.speaker}</span>
+              )}
+            </div>
+            <div className="w-full bg-transparent outline-none resize-none whitespace-pre-wrap">
+              {line.text ?? ''}
+            </div>
           </div>
-          <textarea
-            defaultValue={line.text ?? ''}
-            className="w-full bg-transparent outline-none resize-none whitespace-pre-wrap"
-            rows={3}
-            readOnly
-          />
-        </div>
       ))}
     </div>
   );

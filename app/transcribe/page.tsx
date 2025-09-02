@@ -39,20 +39,53 @@ type TranscriptCardProps = {
   onExport: () => void;
 };
 function TranscriptCard(props: TranscriptCardProps) {
-  const { transcript, jobStatus, onExport } = props;
+  const { transcript, jobStatus } = props;
+  const isLoading = jobStatus === "queued" || jobStatus === "running";
+  const lineCount = transcript.length;
   return (
-    <section className="rounded-2xl border bg-card text-card-foreground shadow-sm p-4">
+  <section className="rounded-2xl border bg-card text-card-foreground shadow-sm p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-2 gap-3">
         <h3 className="text-sm font-semibold">Medical Transcript</h3>
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">{transcript.length} lines</span>
+          <span className="text-xs text-muted-foreground">{lineCount} lines</span>
         </div>
       </div>
 
-      {jobStatus === "done" && transcript.length > 0 ? (
-        <TranscriptList lines={transcript} />
+      {isLoading ? (
+        <div className="text-sm text-slate-500">Transcribing…</div>
+      ) : lineCount === 0 ? (
+        <div className="flex flex-col items-center justify-center text-center py-10">
+          <svg
+            className="h-8 w-8 text-slate-300 mb-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z" />
+            <path d="M19 10a7 7 0 0 1-14 0" />
+            <path d="M12 19v4" />
+            <path d="M8 23h8" />
+          </svg>
+          <div className="text-sm font-medium text-slate-600">No transcript available</div>
+          <div className="text-xs text-slate-400">
+            Upload an audio file and start transcription to see results
+          </div>
+        </div>
       ) : (
-        <div className="text-muted-foreground text-sm">No transcript available.</div>
+        (() => {
+          const joined = (transcript ?? [])
+            .map((l: any) => (typeof l === "string" ? l : l?.text ?? ""))
+            .join("\n");
+          return (
+            <pre className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-800 font-mono bg-slate-50 rounded-lg p-3 h-full overflow-auto">
+              {joined}
+            </pre>
+          );
+        })()
       )}
     </section>
   );
@@ -62,6 +95,7 @@ import { Navigation } from "@/components/ui/navigation";
 import { UploadDropzone } from "@/components/transcribe/UploadDropzone";
 import { AudioPlayer } from "@/components/transcribe/AudioPlayer";
 import TranscriptList, { Line, normalizeLines } from "@/components/transcribe/TranscriptList";
+import TranscriptPanel from "@/app/components/TranscriptPanel";
 import { RightRailTabs } from "@/components/transcribe/RightRailTabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +119,7 @@ export default function TranscribePage() {
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string>("");
   // Change transcriptLines state to Line[]
-  const [transcriptLines, setTranscriptLines] = useState<Line[]>([]);
+  const [transcriptLines, setTranscriptLines] = useState<string[]>([]);
   const [mode, setMode] = useState<'lite' | 'balanced' | 'pro'>('balanced');
   const [doctorCorrections, setDoctorCorrections] = useState<Array<{
     id: string;
@@ -142,7 +176,7 @@ export default function TranscribePage() {
               );
 
               console.log("Normalized lines:", finalLines); // should be [{text: "Every …"}, ...]
-              setTranscriptLines(finalLines);
+              setTranscriptLines(finalLines.map((l: any) => typeof l === "string" ? l : l?.text ?? ""));
 
               toast({
                 title: "Transcription Complete",
@@ -219,7 +253,7 @@ export default function TranscribePage() {
   }
   setJobStatus('queued');
   setProgress(0);
-  setTranscriptLines([] as Line[]);
+  setTranscriptLines([]);
   setErrorMessage("");
   try {
     // Create job
@@ -279,51 +313,46 @@ export default function TranscribePage() {
 
   const handleEditLine = (index: number, newText: string) => {
     setTranscriptLines(prev =>
-      prev.map((line, i) => i === index ? { ...line, text: newText } : line)
+      prev.map((line, i) => i === index ? newText : line)
     );
   };
 
   const handleExport = async () => {
-    if (transcriptLines.length === 0) {
-      toast({
-        title: "No Content",
-        description: "No transcript content to export.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
-      const response = await fetch('/api/exports/docx', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `Transcription - ${doctorId} - ${new Date().toLocaleDateString()}`,
-          lines: transcriptLines.map((l: Line) => l.text)
-        })
-      });
-
-      if (response.ok) {
-        // Create download link
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `transcription-${doctorId}-${Date.now()}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
+      const text = transcriptLines.join("\n");
+      if (!text.trim()) {
         toast({
-          title: "Export Successful",
-          description: "Document downloaded successfully."
+          title: "No Content",
+          description: "No transcript to export.",
+          variant: "destructive"
         });
-      } else {
-        throw new Error('Export failed');
+        return;
       }
+      const res = await fetch("/api/exports/docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Medical Transcript", text }),
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        console.error("Export failed", res.status, msg);
+        throw new Error(`Export failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Medical_Transcript.docx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Export Successful",
+        description: "Document downloaded successfully."
+      });
     } catch (error) {
-      console.error('Export error:', error);
+      console.error("Export error:", error);
       toast({
         title: "Export Failed",
         description: "Failed to export document.",
@@ -454,35 +483,29 @@ export default function TranscribePage() {
 
 
   {/* Main 3-col layout */}
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Transcript spans two columns */}
-          <section className="lg:col-span-2 order-2 lg:order-1">
-            <TranscriptCard
-              transcript={transcriptLines}
-              jobStatus={jobStatus}
-              onExport={handleExport}
-            />
-          </section>
-
-          {/* Right rail: audio + corrections/detected */}
-          <aside className="order-1 lg:order-2 space-y-4">
-            <AudioCard uploadedFile={uploadedFile} />
-            <RightRailTabs doctorId={doctorId} />
-          </aside>
-        </div>
-
-
-
-// ...existing code...
+  <div className="mt-4 grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4 items-stretch">
+    <div className="min-h-0">
+      <TranscriptPanel
+        lines={transcriptLines}
+        isLoading={jobStatus === "queued" || jobStatus === "running"}
+        onLinesChange={setTranscriptLines}
+        isUploaded={jobStatus === "uploaded" || jobStatus === "running" || jobStatus === "done"}
+      />
+    </div>
+    <div className="flex flex-col gap-4">
+      <AudioCard uploadedFile={uploadedFile} />
+      <RightRailTabs doctorId={doctorId} />
+    </div>
+  </div>
 
         {/* Footer Bar */}
         <Card className="rounded-xl shadow-soft">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center space-x-4">
-                <Button 
-                  onClick={handleExport} 
-                  disabled={transcriptLines.length === 0}
+                <Button
+                  onClick={handleExport}
+                  disabled={!transcriptLines?.length}
                   variant="outline"
                   className="hover:bg-primary/10 hover:text-primary hover:border-primary"
                 >
@@ -490,7 +513,6 @@ export default function TranscribePage() {
                   Export as Word Document
                 </Button>
               </div>
-              
               <div className="flex items-center space-x-2">
                 <Label className="text-sm font-medium">Processing Mode:</Label>
                 <div className="flex border rounded-lg overflow-hidden">
