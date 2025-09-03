@@ -104,29 +104,36 @@ import { useToast } from "@/hooks/use-toast";
 export default function TranscribePage() {
   const leftColRef = useRef<HTMLDivElement>(null);
   const rightColRef = useRef<HTMLElement>(null);
+  const rightInnerRef = useRef<HTMLDivElement>(null);
 
   // Match left column height to right rail on desktop; allow natural stack on mobile
   useEffect(() => {
     const left = leftColRef.current;
-    const right = rightColRef.current;
-    if (!left || !right) return;
+    const rightInner = rightInnerRef.current;
+    if (!left || !rightInner) return;
 
     const apply = () => {
-      // only lock height on lg screens where we use 3-column grid
       if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-        const h = right.offsetHeight; // includes audio + corrections cards
-        left.style.height = `${h}px`;
+        // measure actual content height (not stretched track)
+        const h = Math.ceil(rightInner.getBoundingClientRect().height || rightInner.scrollHeight || 0);
+        left.style.height = h ? `${h}px` : "";
       } else {
-        left.style.height = ""; // clear on mobile/tablet stack
+        left.style.height = ""; // natural stack on mobile/tablet
       }
     };
 
     apply();
     const ro = new ResizeObserver(apply);
-    ro.observe(right);
+    ro.observe(rightInner);
+
+    // Ensure re-apply on tab switches/content swaps
+    const mo = new MutationObserver(apply);
+    mo.observe(rightInner, { childList: true, subtree: true });
+
     window.addEventListener("resize", apply);
     return () => {
       ro.disconnect();
+      mo.disconnect();
       window.removeEventListener("resize", apply);
     };
   }, []);
@@ -521,12 +528,14 @@ export default function TranscribePage() {
     {/* Right rail: audio + corrections/detected */}
     <aside
       ref={rightColRef}
-      className="order-1 lg:order-2 space-y-4"
+      className="order-1 lg:order-2"
     >
-      <AudioCard uploadedFile={uploadedFile} />
-      <RightRailTabs doctorId={doctorId} />
-    </aside>
+      <div ref={rightInnerRef} className="space-y-4">
+        <AudioCard uploadedFile={uploadedFile} />
+        <RightRailTabs doctorId={doctorId} />
       </div>
+    </aside>
+  </div>
 
       {/* Footer Bar */}
       <Card className="rounded-xl shadow-soft">
