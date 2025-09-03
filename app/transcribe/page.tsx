@@ -452,9 +452,11 @@ export default function TranscribePage() {
                       {Math.round(uploadedFile.size / 1024 / 1024 * 100) / 100} MB
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-medical-success border-medical-success bg-medical-success/10">
-                    Ready for Processing
-                  </Badge>
+                  {jobStatus === 'uploaded' && (
+                    <Badge variant="outline" className="text-medical-success border-medical-success bg-medical-success/10">
+                      Ready for Processing
+                    </Badge>
+                  )}
                 </div>
               </div>
             )}
