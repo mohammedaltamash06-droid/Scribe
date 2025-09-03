@@ -1,11 +1,5 @@
 "use client";
-import React from "react";
-
-
-
-// --- normalize any result shape to Line[] ---
-
-import { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // --- Helper Components ---
 type AudioCardProps = { uploadedFile: File | null };
@@ -108,6 +102,34 @@ import { Play, Download, Mic, Upload, ExternalLink, AlertCircle, RotateCcw } fro
 import { useToast } from "@/hooks/use-toast";
 
 export default function TranscribePage() {
+  const leftColRef = useRef<HTMLDivElement>(null);
+  const rightColRef = useRef<HTMLElement>(null);
+
+  // Match left column height to right rail on desktop; allow natural stack on mobile
+  useEffect(() => {
+    const left = leftColRef.current;
+    const right = rightColRef.current;
+    if (!left || !right) return;
+
+    const apply = () => {
+      // only lock height on lg screens where we use 3-column grid
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+        const h = right.offsetHeight; // includes audio + corrections cards
+        left.style.height = `${h}px`;
+      } else {
+        left.style.height = ""; // clear on mobile/tablet stack
+      }
+    };
+
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(right);
+    window.addEventListener("resize", apply);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", apply);
+    };
+  }, []);
   const { toast } = useToast();
   const [doctorId, setDoctorId] = useState<string>("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -484,25 +506,31 @@ export default function TranscribePage() {
 
   {/* Main 3-col layout */}
   <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-          {/* Transcript spans two columns */}
-          <section className="lg:col-span-2 order-2 lg:order-1 h-full flex flex-col">
-            <TranscriptPanel
-              lines={transcriptLines}
-              isLoading={jobStatus === "queued" || jobStatus === "running"}
-              onLinesChange={setTranscriptLines}
-            />
-          </section>
+    {/* Transcript spans two columns */}
+    <section
+      ref={leftColRef}
+      className="lg:col-span-2 order-2 lg:order-1 h-full min-h-0 flex flex-col"
+    >
+      <TranscriptPanel
+        lines={transcriptLines}
+        isLoading={jobStatus === "queued" || jobStatus === "running"}
+        onLinesChange={setTranscriptLines}
+      />
+    </section>
 
-          {/* Right rail: audio + corrections/detected */}
-          <aside className="order-1 lg:order-2 space-y-4">
-            <AudioCard uploadedFile={uploadedFile} />
-            <RightRailTabs doctorId={doctorId} />
-          </aside>
-        </div>
+    {/* Right rail: audio + corrections/detected */}
+    <aside
+      ref={rightColRef}
+      className="order-1 lg:order-2 space-y-4"
+    >
+      <AudioCard uploadedFile={uploadedFile} />
+      <RightRailTabs doctorId={doctorId} />
+    </aside>
+      </div>
 
-        {/* Footer Bar */}
-        <Card className="rounded-xl shadow-soft">
-          <CardContent className="p-4">
+      {/* Footer Bar */}
+      <Card className="rounded-xl shadow-soft">
+        <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <Button

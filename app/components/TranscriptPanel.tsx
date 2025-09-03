@@ -43,7 +43,7 @@ export default function TranscriptPanel({
     }, [joined]);
 
     return (
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm h-full flex flex-col">
+  <section className="rounded-xl border border-slate-200 bg-white shadow-sm h-full min-h-0 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
           <div className="font-medium text-slate-800">Medical Transcript</div>
@@ -51,7 +51,7 @@ export default function TranscriptPanel({
         </div>
 
         {/* Body */}
-        <div className="px-4 py-4 flex-1">
+  <div className="px-4 py-4 flex-1 min-h-0 overflow-hidden">
           {isLoading ? (
             <div className="h-full flex items-center justify-center text-sm text-slate-500">
               Transcribing…
@@ -74,7 +74,7 @@ export default function TranscriptPanel({
               suppressContentEditableWarning
               onInput={handleInput}
               className="
-                w-full h-full overflow-auto
+                w-full h-full max-h-full min-h-0 overflow-auto
                 rounded-md border border-slate-200 bg-white
                 px-3 py-3 shadow-inner
                 font-sans text-slate-900 antialiased
@@ -82,6 +82,9 @@ export default function TranscriptPanel({
                 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300
               "
               style={{
+                minHeight: 0,
+                maxHeight: '100%',
+                overflow: 'auto',
                 fontSize: "19px",
                 lineHeight: 1.6,
                 textAlign: "justify",
