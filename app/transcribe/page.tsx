@@ -106,7 +106,7 @@ export default function TranscribePage() {
   const rightColRef = useRef<HTMLElement>(null);
   const rightInnerRef = useRef<HTMLDivElement>(null);
 
-  // Match left column height to right rail on desktop; allow natural stack on mobile
+  // Match left column height to right rail's inner content on desktop; allow natural stack on mobile
   useEffect(() => {
     const left = leftColRef.current;
     const rightInner = rightInnerRef.current;
@@ -535,7 +535,7 @@ export default function TranscribePage() {
         <RightRailTabs doctorId={doctorId} />
       </div>
     </aside>
-  </div>
+      </div>
 
       {/* Footer Bar */}
       <Card className="rounded-xl shadow-soft">
