@@ -1,124 +1,104 @@
 
-export const dynamic = "force-dynamic";
+// app/api/jobs/[id]/process/route.ts
 
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/app/api/_lib/supabase";
-import { runTranscribe } from "@/app/api/_lib/engines";
+import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+const AUDIO_BUCKET   = "audio";
+const RESULTS_BUCKET = "results";
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id: jobId } = await params;
-  const supabase = supabaseAdmin();
+function admin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
 
-  try {
-    // 1) Load job
-    const { data: job, error: jobErr } = await supabase
-      .from("jobs")
-      .select("id, file_path, state")
-      .eq("id", jobId)
-      .single();
+type Params = { id: string };
+type MaybePromise<T> = T | Promise<T>;
 
-    if (jobErr || !job) {
-      return NextResponse.json(
-        { error: "NOT_FOUND", detail: jobErr?.message ?? "Job not found" },
-        { status: 404 }
-      );
-    }
-    if (!job.file_path) {
-      return NextResponse.json(
-        {
-          error: "MISSING_FILE_PATH",
-          detail: "Job exists but has no file_path (upload step did not persist).",
-          hint: "Re-run upload; ensure /api/jobs/:id/upload upserts { id, file_path } into jobs.",
-        },
-        { status: 400 }
-      );
-    }
+async function callWhisperWithUrl(base: string, signedUrl: string) {
+  return fetch(`${base}/transcribe`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ url: signedUrl, language: "en" }),
+  });
+}
+async function callWhisperWithBinary(base: string, signedUrl: string, fileName: string) {
+  const audioRes = await fetch(signedUrl);
+  if (!audioRes.ok) throw new Error(`Audio download failed ${audioRes.status}`);
+  const ab = await audioRes.arrayBuffer();
+  const form = new FormData();
+  form.append("audio", new Blob([ab]), fileName || "audio");
+  return fetch(`${base}/transcribe`, { method: "POST", body: form });
+}
 
-    // 2) Signed URL
-    const { data: signed, error: signErr } = await supabase
-      .storage
-      .from("audio")
-      .createSignedUrl(job.file_path, 60 * 60);
+export async function POST(_req: Request, ctx: { params: MaybePromise<Params> }) {
+  const supa = admin();
+  const { id: jobId } = await Promise.resolve(ctx.params);
+  const base = process.env.TRANSCRIBE_BASE_URL!;
+  await supa.from("jobs").update({ state: "running" }).eq("id", jobId);
 
-    if (signErr || !signed?.signedUrl) {
-      return NextResponse.json(
-        {
-          error: "SIGN_URL_FAILED",
-          detail: signErr?.message ?? "Could not sign audio URL",
-          hint: 'Confirm bucket name is "audio" and object exists. Check Storage → audio → object path.',
-        },
-        { status: 500 }
-      );
-    }
-
-    // 3) Mark running (best-effort)
-    await supabase.from("jobs").update({ state: "running" as any }).eq("id", jobId);
-
-    // 4) Call engine (robust error reporting)
-    let lines: Array<{ start?: number; end?: number; text: string }> = [];
-    try {
-      const res = await runTranscribe({ fileUrl: signed.signedUrl, language: "en" });
-      lines = res.lines ?? [];
-    } catch (e: any) {
-      // Surface the exact engine error so the UI shows it
-      const msg = typeof e?.message === "string" ? e.message : String(e);
-      await supabase.from("jobs").update({ state: "error" as any }).eq("id", jobId);
-      return NextResponse.json(
-        {
-          error: "ENGINE_ERROR",
-          detail: msg,
-          hint:
-            'Ensure TRANSCRIBE_BASE_URL points to your FastAPI server, it is reachable, and /transcribe accepts JSON {url}. ' +
-            'On the server, watch the uvicorn logs for requests/errors.',
-        },
-        { status: 502 }
-      );
-    }
-
-    // 5) Save results JSON to "results" bucket
-    const key = `jobs/${jobId}/transcript.json`;
-    const payload = JSON.stringify({ lines }, null, 2);
-
-    const { error: upErr } = await supabase
-      .storage
-      .from("results")
-      .upload(key, new Blob([payload], { type: "application/json" }) as any, {
-        upsert: true,
-        contentType: "application/json",
-      });
-
-    if (upErr) {
-      await supabase.from("jobs").update({ state: "error" as any }).eq("id", jobId);
-      const msg = upErr.message ?? "Upload to results bucket failed";
-      const missingBucketHint =
-        msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("bucket")
-          ? 'Create a private storage bucket named "results" in Supabase.'
-          : undefined;
-
-      return NextResponse.json(
-        {
-          error: "RESULTS_UPLOAD_FAILED",
-          detail: msg,
-          hint: missingBucketHint,
-        },
-        { status: 500 }
-      );
-    }
-
-    // 6) Done
-    await supabase.from("jobs").update({ state: "done" as any }).eq("id", jobId);
-    return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (e: any) {
-    const msg = typeof e?.message === "string" ? e.message : String(e);
-    // Safety net
-    try {
-      await supabase.from("jobs").update({ state: "error" as any }).eq("id", jobId);
-    } catch {}
-    return NextResponse.json(
-      { error: "UNHANDLED_SERVER_ERROR", detail: msg },
-      { status: 500 }
-    );
+  const { data: job } = await supa.from("jobs").select("file_path").eq("id", jobId).single();
+  if (!job?.file_path) {
+    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json({ error: "No file uploaded for this job." }, { status: 400 });
   }
+  const fileName = job.file_path.split("/").pop() || "audio";
+  const signed = await supa.storage.from(AUDIO_BUCKET).createSignedUrl(job.file_path, 900);
+  if (!signed.data?.signedUrl) {
+    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json({ error: "Could not sign audio" }, { status: 500 });
+  }
+
+  // Whisper call (JSON → fallback to multipart)
+  let resp = await callWhisperWithUrl(base, signed.data.signedUrl);
+  if (resp.status === 422 || resp.status === 404) {
+    resp = await callWhisperWithBinary(base, signed.data.signedUrl, fileName);
+  }
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => "");
+    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json({ error: "Transcribe failed", detail }, { status: 502 });
+  }
+  const result = await resp.json().catch(() => ({} as any));
+  const transcript = result?.lines
+    ? { lines: result.lines }
+    : {
+        lines: Array.isArray(result?.segments)
+          ? result.segments.map((s: any) => ({
+              start: s.start ?? 0,
+              end: s.end ?? 0,
+              text: String(s.text || "").trim(),
+            }))
+          : [],
+      };
+
+  const resultPath = `jobs/${jobId}/transcript.json`;
+  const put = await supa.storage.from(RESULTS_BUCKET).upload(
+    resultPath,
+    new Blob([JSON.stringify(transcript)], { type: "application/json" }),
+    { upsert: true, contentType: "application/json" }
+  );
+  if (put.error) {
+    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json({ error: "Failed to save transcript", detail: put.error.message }, { status: 500 });
+  }
+
+  const upd = await supa
+    .from("jobs")
+    .update({ state: "done", result_path: resultPath, duration_seconds: result?.duration_seconds ?? null })
+    .eq("id", jobId)
+    .select("result_path")
+    .single();
+
+  if (upd.error || !upd.data?.result_path) {
+    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json({ error: "Failed to update job.result_path" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, result_path: upd.data.result_path });
 }
 

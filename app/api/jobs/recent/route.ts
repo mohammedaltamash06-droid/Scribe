@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
-  // stub data — replace with DB later
-  return NextResponse.json({
-    rows: [
-      { date: new Date().toISOString(), file: "demo1.wav", minutes: 5, doctor: "demo", exportUrl: "#" },
-      { date: new Date(Date.now() - 86400000).toISOString(), file: "demo2.wav", minutes: 7, doctor: "demo", exportUrl: "#" }
-    ]
-  });
+  const supa = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const { data, error } = await supa
+    .from("jobs")
+    .select("id, state, file_path, result_path, created_at")
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, items: data });
 }

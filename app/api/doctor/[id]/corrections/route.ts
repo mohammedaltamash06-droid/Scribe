@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/app/api/_lib/supabase";
+import { createAdminClient } from "@/lib/supabase-server";
 
 export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   const doctorId = id?.trim();
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
 
   await supabase.from("doctors").upsert({ id: doctorId }); // ensure doctor exists
   const { data, error } = await supabase
@@ -14,26 +14,24 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
     .order("id", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ items: (data || []).map(r => ({ before: r.before_text, after: r.after_text })) });
+  return NextResponse.json({ items: (data || []).map((r: { before_text: string; after_text: string }) => ({ before: r.before_text, after: r.after_text })) });
 }
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   const doctorId = id?.trim();
-  const body = await req.json().catch(() => ({}));
-  const items: Array<{ before: string; after: string }> = Array.isArray(body?.items) ? body.items : [];
-  const supabase = supabaseAdmin();
+  const supa = createAdminClient();
 
-  await supabase.from("doctors").upsert({ id: doctorId });
-  // overwrite semantics: delete then insert
-  const del = await supabase.from("doctor_corrections").delete().eq("doctor_id", doctorId);
-  if (del.error) return NextResponse.json({ error: del.error.message }, { status: 500 });
+  const body = (await req.json().catch(() => ({}))) as { before_text: string; after_text: string } | Array<{ before_text: string; after_text: string }>;
+  const rows = Array.isArray(body) ? body : [body];
 
-  if (items.length) {
-    const ins = await supabase.from("doctor_corrections").insert(
-      items.map(x => ({ doctor_id: doctorId, before_text: x.before, after_text: x.after }))
-    );
-    if (ins.error) return NextResponse.json({ error: ins.error.message }, { status: 500 });
-  }
-  return NextResponse.json({ items });
+  const toInsert = rows.map((r) => ({
+    doctor_id: doctorId,
+    before_text: r.before_text ?? null,
+    after_text: r.after_text ?? null,
+  }));
+
+  const { error } = await supa.from("doctor_corrections").insert(toInsert);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }

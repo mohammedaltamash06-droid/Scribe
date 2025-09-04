@@ -94,30 +94,53 @@ def _run_whisper(wav_path: str, language: Optional[str] = "en"):
 async def ping():
     return {"ok": True}
 
-# ====== JSON: { "url": "https://..." }  (Recommended; matches your Next.js contract) ======
-@app.post("/transcribe", response_model=TranscriptionResponse)
-async def transcribe_json(payload: TranscribeJsonRequest = Body(...)):
-    async with job_lock:
-        job_id = str(uuid.uuid4())
-        tmpdir = tempfile.mkdtemp(prefix="ts_")
-        try:
-            raw = os.path.join(tmpdir, "audio_input")
-            # download
-            with requests.get(payload.url, stream=True) as r:
-                r.raise_for_status()
-                with open(raw, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            wav = os.path.join(tmpdir, "audio_16k.wav")
-            to_wav16k(raw, wav)
 
-            segs, lang, text = _run_whisper(wav, payload.language)
-            return TranscriptionResponse(jobId=job_id, language=lang, text=text, segments=segs)
-        finally:
-            try:
-                shutil.rmtree(tmpdir)
-            except Exception:
-                pass
+# ====== Unified /transcribe endpoint: accepts either JSON {url} or multipart audio ======
+import aiohttp
+
+class UrlBody(BaseModel):
+    url: str
+    language: str | None = None
+
+async def _download_to_temp(url: str) -> str:
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".bin")
+    tmp.close()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as r:
+            r.raise_for_status()
+            with open(tmp.name, "wb") as f:
+                while True:
+                    chunk = await r.content.read(1024 * 64)
+                    if not chunk: break
+                    f.write(chunk)
+    return tmp.name
+
+@app.post("/transcribe")
+async def transcribe(
+    audio: UploadFile | None = File(None),    # multipart form
+    json_body: UrlBody | None = Body(None)    # JSON {url, language}
+):
+    temp_path = None
+    if audio is not None:
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f"_{audio.filename}")
+        tmp.close()
+        data = await audio.read()
+        with open(tmp.name, "wb") as f:
+            f.write(data)
+        temp_path = tmp.name
+        language = None
+    elif json_body is not None and json_body.url:
+        temp_path = await _download_to_temp(json_body.url)
+        language = json_body.language
+    else:
+        return {"detail": [{"type": "missing", "loc": ["body", "audio"], "msg": "Field required"}]}, 422
+
+    segments, info = model.transcribe(temp_path, language=language, vad_filter=True)
+    out = []
+    for s in segments:
+        out.append({"start": float(s.start), "end": float(s.end), "text": s.text.strip()})
+
+    return {"segments": out, "duration_seconds": int(info.duration or 0)}
 
 # ====== MULTIPART UPLOAD (for tools that send files directly) ======
 @app.post("/transcribe-upload", response_model=TranscriptionResponse)

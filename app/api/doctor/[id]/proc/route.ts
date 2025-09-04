@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/app/api/_lib/supabase";
+import { createAdminClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   const limit = clamp(Number(url.searchParams.get("limit") || 10), 1, 100);
   const offset = Math.max(0, Number(url.searchParams.get("offset") || 0));
 
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
 
   let query = supabase
     .from("proc")
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
   const body = await request.json();
   const { data, error } = await supabase
     .from("proc")
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
 export async function PUT(request: NextRequest, context: { params: { id: string } }) {
   const { id } = context.params;
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
   const body = await request.json();
   const { data, error } = await supabase
     .from("proc")
@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, context: { params: { id: string 
 
 export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
   const { id } = context.params;
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
   const body = await request.json();
   const { data, error } = await supabase
     .from("proc")

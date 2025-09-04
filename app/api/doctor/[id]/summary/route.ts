@@ -1,47 +1,34 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/app/api/_lib/supabase";
+import { createAdminClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
+type Params = { id: string };
+type MaybePromise<T> = T | Promise<T>;
+
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  context: { params: MaybePromise<Params> }
 ) {
-  const { id } = params;
-  const supabase = supabaseAdmin();
+  const supa = createAdminClient();
+  const { id: doctorId } = await Promise.resolve(context.params);
 
-  try {
-    // DX
-    const { count: dxCount, error: dxErr } = await supabase
-      .from("dx")
-      .select("id", { count: "exact", head: true })
-      .eq("doctor_id", id);
-    if (dxErr) throw dxErr;
+  const [doc, corrections, dx, rx, proc] = await Promise.all([
+    supa.from("doctors").select("*").eq("id", doctorId).maybeSingle(),
+    supa.from("doctor_corrections").select("*").eq("doctor_id", doctorId).order("created_at", { ascending: false }),
+    supa.from("dx").select("*").eq("doctor_id", doctorId).order("created_at", { ascending: false }),
+    supa.from("rx").select("*").eq("doctor_id", doctorId).order("created_at", { ascending: false }),
+    supa.from("proc").select("*").eq("doctor_id", doctorId).order("created_at", { ascending: false })
+  ]);
 
-    // RX
-    const { count: rxCount, error: rxErr } = await supabase
-      .from("rx")
-      .select("id", { count: "exact", head: true })
-      .eq("doctor_id", id);
-    if (rxErr) throw rxErr;
+  if (doc.error) return NextResponse.json({ error: doc.error.message }, { status: 500 });
 
-    // PROC
-    const { count: procCount, error: procErr } = await supabase
-      .from("proc")
-      .select("id", { count: "exact", head: true })
-      .eq("doctor_id", id);
-    if (procErr) throw procErr;
-
-    return NextResponse.json({
-      doctor_id: id,
-      dx_count: dxCount ?? 0,
-      rx_count: rxCount ?? 0,
-      proc_count: procCount ?? 0,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to fetch summary" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    doctor: doc.data ?? null,
+    corrections: corrections.data ?? [],
+    dx: dx.data ?? [],
+    rx: rx.data ?? [],
+    proc: proc.data ?? [],
+  });
 }
+

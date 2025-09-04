@@ -3,7 +3,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { supabaseAdmin } from "@/app/api/_lib/supabase";
+import { createAdminClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,7 @@ export async function GET(
   const { id } = await ctx.params;
   const { q, limit, offset } = parseSearchParams(req);
 
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
 
   // Build query
   let query = supabase
@@ -95,7 +95,7 @@ export async function POST(
   ctx: { params: { id: string } }
 ) {
   const { id } = ctx.params;
-  const supabase = supabaseAdmin();
+  const supabase = createAdminClient();
 
   let body: unknown;
   try {
@@ -130,7 +130,7 @@ export async function POST(
 
 export async function PUT(request: NextRequest, context: { params: { id: string } }) {
   const { id } = context.params;
-  const supabase = supabaseAdmin();
+    const supabase = createAdminClient();
   const body = await request.json();
   const { data, error } = await supabase
     .from("dx")
@@ -145,7 +145,7 @@ export async function PUT(request: NextRequest, context: { params: { id: string 
 
 export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
   const { id } = context.params;
-  const supabase = supabaseAdmin();
+    const supabase = createAdminClient();
   const body = await request.json();
   const { data, error } = await supabase
     .from("dx")

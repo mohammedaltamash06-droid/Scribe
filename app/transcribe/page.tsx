@@ -315,15 +315,14 @@ export default function TranscribePage() {
       throw new Error(`Upload failed: ${err.error ?? up.statusText}`);
     }
 
-    // 2) process
+    // 2) process and WAIT for it to finish
     const processRes = await fetch(`/api/jobs/${jobData.jobId}/process`, { method: "POST" });
+    const body = await processRes.json().catch(() => ({}));
     if (!processRes.ok) {
-      const err = await processRes.json().catch(() => ({}));
-      throw new Error(
-        `Failed to start processing: ${err.error || processRes.statusText}${err.detail ? ` — ${err.detail}` : ""}`
-      );
+      throw new Error(body?.error ? `Transcribe failed — ${body.error}${body?.detail ? `: ${body.detail}` : ""}` : "Transcribe failed");
     }
 
+    // 3) Only AFTER process succeeds, set job status to running
     setJobStatus("running");
     toast({
       title: "Transcription Started",
