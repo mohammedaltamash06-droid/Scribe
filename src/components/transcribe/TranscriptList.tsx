@@ -37,13 +37,17 @@ export function normalizeLines(input: any[]): Line[] {
     }
   };
 
-  return (input ?? []).map((row: any, i: number) => ({
-    id: String(row?.id ?? i + 1),
-    text: toText(row?.text ?? row),
-    start: row?.start ?? row?.timestamp,
-    end: row?.end,
-    speaker: row?.speaker,
-  }));
+  return (input ?? []).map((row: any, i: number) => {
+    // remove any leading spaces/tabs that creep in from the engine or paste
+    const text = (toText(row?.text ?? row) ?? "").replace(/^\s+/, "");
+    return {
+      id: String(row?.id ?? i + 1),
+      text,
+      start: row?.start ?? row?.timestamp,
+      end: row?.end,
+      speaker: row?.speaker,
+    };
+  });
 }
 
 /**

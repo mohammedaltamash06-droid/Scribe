@@ -8,10 +8,10 @@ type Line = { start?: number; end?: number; text: string };
 function normalize(data: any): { lines: Line[] } {
   if (Array.isArray(data?.segments)) {
     return {
-      lines: data.segments.map((s: any) => ({
+      lines: data.segments.map((s: any, i: number) => ({
         start: s.start,
         end: s.end,
-        text: s.text ?? "",
+        text: (s.text ?? "").replace(/^\s+/, ""), // trim only the start of each line
       })),
     };
   }

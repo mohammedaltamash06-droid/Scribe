@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import useFauxSmoothProgress from "@/hooks/useFauxSmoothProgress";
 
 // --- Helper Components ---
 type AudioCardProps = { uploadedFile: File | null };
@@ -146,6 +147,12 @@ export default function TranscribePage() {
   // Enable Start button if a file is picked and not currently processing
   const canStart = Boolean(uploadedFile) && !(['queued', 'running'].includes(jobStatus));
   const [progress, setProgress] = useState(0);
+  // Faux smooth progress for UI
+  const displayProgress = useFauxSmoothProgress(progress, {
+    intervalMs: 250,
+    step: 1,
+    resetKey: jobId || 'no-job',
+  });
   const [errorMessage, setErrorMessage] = useState<string>("");
   // Change transcriptLines state to Line[]
   const [transcriptLines, setTranscriptLines] = useState<string[]>([]);
@@ -486,9 +493,9 @@ export default function TranscribePage() {
                   <span className="text-foreground font-medium">
                     {jobStatus === 'queued' ? 'Queued for processing...' : 'Processing audio file...'}
                   </span>
-                  <span className="text-muted-foreground">{Math.round(progress)}%</span>
+                  <span className="text-muted-foreground">{Math.round(displayProgress)}%</span>
                 </div>
-                <Progress value={progress} className="w-full" />
+                <Progress value={displayProgress} className="w-full" />
                 <p className="text-xs text-muted-foreground">
                   This may take a few minutes depending on file size and selected mode
                 </p>
