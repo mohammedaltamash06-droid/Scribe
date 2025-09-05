@@ -1,3 +1,8 @@
+import "server-only";
+/**
+ * This file is server-only because it exposes server config (e.g., service role).
+ * Do not import from Client Components.
+ */
 export const env = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

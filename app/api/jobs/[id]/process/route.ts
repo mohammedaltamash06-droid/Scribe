@@ -1,11 +1,9 @@
-
 // app/api/jobs/[id]/process/route.ts
-
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
-const AUDIO_BUCKET   = "audio";
+const AUDIO_BUCKET = "audio";
 const RESULTS_BUCKET = "results";
 
 function admin() {
@@ -16,9 +14,7 @@ function admin() {
   );
 }
 
-type Params = { id: string };
-type MaybePromise<T> = T | Promise<T>;
-
+/** 1) DO NOT throw here — let caller decide and fallback to multipart on 422 */
 async function callWhisperWithUrl(base: string, signedUrl: string) {
   return fetch(`${base}/transcribe`, {
     method: "POST",
@@ -26,79 +22,113 @@ async function callWhisperWithUrl(base: string, signedUrl: string) {
     body: JSON.stringify({ url: signedUrl, language: "en" }),
   });
 }
-async function callWhisperWithBinary(base: string, signedUrl: string, fileName: string) {
-  const audioRes = await fetch(signedUrl);
-  if (!audioRes.ok) throw new Error(`Audio download failed ${audioRes.status}`);
-  const ab = await audioRes.arrayBuffer();
-  const form = new FormData();
-  form.append("audio", new Blob([ab]), fileName || "audio");
-  return fetch(`${base}/transcribe`, { method: "POST", body: form });
-}
 
-export async function POST(_req: Request, ctx: { params: MaybePromise<Params> }) {
+type Params = { id: string };
+
+export async function POST(_req: Request, { params }: { params: Promise<Params> }) {
+  const { id: jobId } = await params;
   const supa = admin();
-  const { id: jobId } = await Promise.resolve(ctx.params);
-  const base = process.env.TRANSCRIBE_BASE_URL!;
-  await supa.from("jobs").update({ state: "running" }).eq("id", jobId);
 
-  const { data: job } = await supa.from("jobs").select("file_path").eq("id", jobId).single();
-  if (!job?.file_path) {
-    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
-    return NextResponse.json({ error: "No file uploaded for this job." }, { status: 400 });
-  }
-  const fileName = job.file_path.split("/").pop() || "audio";
-  const signed = await supa.storage.from(AUDIO_BUCKET).createSignedUrl(job.file_path, 900);
-  if (!signed.data?.signedUrl) {
-    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
-    return NextResponse.json({ error: "Could not sign audio" }, { status: 500 });
-  }
+  try {
+    const base = process.env.TRANSCRIBE_BASE_URL!;
+    if (!base) {
+      return NextResponse.json({ error: "TRANSCRIBE_BASE_URL not set" }, { status: 500 });
+    }
 
-  // Whisper call (JSON → fallback to multipart)
-  let resp = await callWhisperWithUrl(base, signed.data.signedUrl);
-  if (resp.status === 422 || resp.status === 404) {
-    resp = await callWhisperWithBinary(base, signed.data.signedUrl, fileName);
-  }
-  if (!resp.ok) {
-    const detail = await resp.text().catch(() => "");
-    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
-    return NextResponse.json({ error: "Transcribe failed", detail }, { status: 502 });
-  }
-  const result = await resp.json().catch(() => ({} as any));
-  const transcript = result?.lines
-    ? { lines: result.lines }
-    : {
-        lines: Array.isArray(result?.segments)
-          ? result.segments.map((s: any) => ({
-              start: s.start ?? 0,
-              end: s.end ?? 0,
-              text: String(s.text || "").trim(),
-            }))
-          : [],
-      };
+    // mark running
+    await supa.from("jobs").update({ state: "running" }).eq("id", jobId);
 
-  const resultPath = `jobs/${jobId}/transcript.json`;
-  const put = await supa.storage.from(RESULTS_BUCKET).upload(
-    resultPath,
-    new Blob([JSON.stringify(transcript)], { type: "application/json" }),
-    { upsert: true, contentType: "application/json" }
-  );
-  if (put.error) {
-    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
-    return NextResponse.json({ error: "Failed to save transcript", detail: put.error.message }, { status: 500 });
+    // load job
+    const { data: job } = await supa.from("jobs").select("file_path").eq("id", jobId).single();
+    if (!job?.file_path) {
+      await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json({ error: "No file uploaded for this job." }, { status: 400 });
+    }
+    const fileName = job.file_path.split("/").pop() || "audio";
+
+    // sign audio
+    const signed = await supa.storage.from(AUDIO_BUCKET).createSignedUrl(job.file_path, 900);
+    if (!signed.data?.signedUrl) {
+      await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json({ error: "Could not sign audio" }, { status: 500 });
+    }
+
+    // 2) JSON-first call (some servers accept {url}; if 422, we'll fallback)
+    let resp = await callWhisperWithUrl(base, signed.data.signedUrl);
+
+    // 3) Fallback to multipart when missing "audio" (422) or any !ok
+    if (!resp.ok) {
+      // Minimal log (PHI-safe)
+      console.error(`[process] whisper-local first call: status=${resp.status}`);
+
+      const audioRes = await fetch(signed.data.signedUrl);
+      const buf = await audioRes.arrayBuffer();
+      const form = new FormData();
+      form.append(
+        "audio",
+        new Blob([buf], {
+          type: audioRes.headers.get("content-type") || "application/octet-stream",
+        }),
+        fileName
+      );
+      form.append("language", "en");
+
+      resp = await fetch(`${base}/transcribe`, { method: "POST", body: form });
+      if (!resp.ok) {
+        console.error(`[process] whisper-local multipart: status=${resp.status}`);
+        await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+        return NextResponse.json({ error: "Processing failed" }, { status: 500 });
+      }
+    }
+
+    const result = await resp.json();
+
+    // 4) Validate transcript JSON before saving
+    const hasSegments = Array.isArray(result?.segments) || Array.isArray(result?.lines);
+    const segs = result?.segments ?? result?.lines ?? [];
+    const timestampsOk = hasSegments
+      ? segs.every((s: any) => typeof s?.start === "number" && typeof s?.end === "number" && typeof s?.text === "string")
+      : false;
+
+    if (!hasSegments || !timestampsOk) {
+      await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json({ error: "Invalid transcript JSON (segments/timestamps missing)" }, { status: 422 });
+    }
+
+    // 5) Save result JSON to results bucket (upsert)
+    const resultPath = `${jobId}/${Date.now()}-result.json`;
+    const payload = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+    const upload = await supa.storage
+      .from(RESULTS_BUCKET)
+      .upload(resultPath, payload, { contentType: "application/json", upsert: true });
+
+    if (upload.error) {
+      await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json({ error: "Failed to save result" }, { status: 500 });
+    }
+
+    // 6) Finish
+    const upd = await supa
+      .from("jobs")
+      .update({
+        state: "done",
+        result_path: resultPath,
+        duration_seconds: result?.duration_seconds ?? null,
+      })
+      .eq("id", jobId)
+      .select("result_path")
+      .single();
+
+    if (upd.error || !upd.data?.result_path) {
+      await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
+      return NextResponse.json({ error: "Failed to update job.result_path" }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, result_path: upd.data.result_path });
+  } catch (e: any) {
+    console.error("[process]", e?.message || e);
+    await admin().from("jobs").update({ state: "error" }).eq("id", jobId);
+    return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
-
-  const upd = await supa
-    .from("jobs")
-    .update({ state: "done", result_path: resultPath, duration_seconds: result?.duration_seconds ?? null })
-    .eq("id", jobId)
-    .select("result_path")
-    .single();
-
-  if (upd.error || !upd.data?.result_path) {
-    await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
-    return NextResponse.json({ error: "Failed to update job.result_path" }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true, result_path: upd.data.result_path });
 }
 

@@ -58,34 +58,9 @@ export default function DashboardPage() {
           setStats(summaryData.stats);
           setTimeseries(summaryData.timeseries || []);
         } else {
-          // Fallback to mock data for development
-          setStats({
-            totalJobs: 142,
-            completedJobs: 128,
-            processingTime: "3.2 min",
-            errorRate: "2.1%",
-            trend: {
-              jobs: "+12%",
-              jobsUp: true,
-              completion: "+5%",
-              completionUp: true
-            },
-            dx_count: 45,
-            rx_count: 30,
-            proc_count: 25
-          });
-
-          // Mock timeseries data
-          const mockTimeseries = Array.from({ length: 30 }, (_, i) => {
-            const date = new Date();
-            date.setDate(date.getDate() - (29 - i));
-            return {
-              date: date.toISOString().split('T')[0],
-              jobs: Math.floor(Math.random() * 15) + 5,
-              completions: Math.floor(Math.random() * 12) + 4
-            };
-          });
-          setTimeseries(mockTimeseries);
+          // No mock: show empty state
+          setStats(null as any);
+          setTimeseries([]);
         }
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -94,7 +69,7 @@ export default function DashboardPage() {
           description: "Failed to load dashboard statistics",
           variant: "destructive"
         });
-      } finally {
+  } finally {
         setLoading(false);
       }
     };
@@ -133,11 +108,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Jobs"
-            value={loading ? "..." : stats?.totalJobs.toString() || "0"}
+            value={loading ? "..." : stats ? stats.totalJobs.toString() : "0"}
             icon={FileAudio}
-            description="All transcription jobs"
-            trend={stats?.trend.jobs}
-            trendUp={stats?.trend.jobsUp}
+            description={stats ? "All transcription jobs" : "No data yet"}
+            trend={stats?.trend?.jobs}
+            trendUp={stats?.trend?.jobsUp}
           />
           <StatCard
             title="Completed Jobs"
@@ -191,7 +166,7 @@ export default function DashboardPage() {
                   <div className="h-64 flex items-center justify-center text-muted-foreground">
                     <div className="text-center">
                       <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>{loading ? "Loading chart data..." : "No chart data available"}</p>
+                      <p>{loading ? "Loading chart data..." : "No data yet"}</p>
                     </div>
                   </div>
                 )}

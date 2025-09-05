@@ -1,53 +1,70 @@
-
 "use client";
 
-// Robust normalizer for transcript lines
-export interface Line {
-  id: string;
-  text: string;
+export type Line = {
+  index: number;
   start?: number;
   end?: number;
-  speaker?: string;
-}
+  text: string;
+  speaker?: string | null;
+};
+
+// Utility: format numbers safely
+const toNumber = (v: any): number | undefined =>
+  typeof v === "number" && Number.isFinite(v) ? v : undefined;
 
 /**
- * Normalize various transcript line formats into a consistent array of Line objects.
- * Accepts arrays of strings, objects, or mixed, and handles missing fields.
+ * Robust normalizer:
+ * - accepts Line[], { lines: Line[] }, { segments: {start,end,text}[] }, or string
+ * - returns Line[]
  */
-export function normalizeLines(input: any[]): Line[] {
-  const toText = (v: any): string => {
-    if (v == null) return "";
-    if (typeof v === "string") return v;
-    if (Array.isArray(v)) return v.map(toText).join(" ");
-
-    // common shapes from different engines
-    if (typeof v === "object") {
-      if ("text" in v) return toText((v as any).text);
-      if ("content" in v) return toText((v as any).content);
-      if ("value" in v) return toText((v as any).value);
-      if ("transcript" in v) return toText((v as any).transcript);
-      if ("message" in v) return toText((v as any).message);
+export function normalizeLines(input: unknown): Line[] {
+  try {
+    // Case 1: already Line[]
+    if (Array.isArray(input)) {
+      // ensure minimal shape
+      return (input as any[]).map((row, i): Line => ({
+        index: typeof row?.index === "number" ? row.index : i,
+        start: toNumber((row as any)?.start),
+        end: toNumber((row as any)?.end),
+        text: String((row as any)?.text ?? ""),
+        speaker: (row as any)?.speaker ?? null,
+      }));
     }
 
-    // last resort – string coercion (still better than “[object Object]”)
-    try {
-      return JSON.stringify(v);
-    } catch {
-      return String(v);
+    // Case 2: object with .lines
+    if (input && typeof input === "object" && "lines" in (input as any)) {
+      const arr = (input as any).lines;
+      if (Array.isArray(arr)) return normalizeLines(arr);
     }
-  };
 
-  return (input ?? []).map((row: any, i: number) => {
-    // remove any leading spaces/tabs that creep in from the engine or paste
-    const text = (toText(row?.text ?? row) ?? "").replace(/^\s+/, "");
-    return {
-      id: String(row?.id ?? i + 1),
-      text,
-      start: row?.start ?? row?.timestamp,
-      end: row?.end,
-      speaker: row?.speaker,
-    };
-  });
+    // Case 3: object with .segments (faster-whisper style)
+    if (input && typeof input === "object" && "segments" in (input as any)) {
+      const segs = (input as any).segments;
+      if (Array.isArray(segs)) {
+        return segs.map((s: any, i: number): Line => ({
+          index: i,
+          start: toNumber(s?.start),
+          end: toNumber(s?.end),
+          text: String(s?.text ?? ""),
+          speaker: s?.speaker ?? null,
+        }));
+      }
+    }
+
+    // Case 4: plain string (split on newlines into pseudo-lines)
+    if (typeof input === "string") {
+      const rows = input.split(/\r?\n/).filter(Boolean);
+      return rows.map((t, i) => ({
+        index: i,
+        text: t.trim(),
+      }));
+    }
+
+    // Unknown shape → empty list
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -58,7 +75,7 @@ export default function TranscriptList({ lines }: { lines: Line[] }) {
   return (
     <div className="space-y-3">
       {lines.map((line) => (
-        <div key={line.id} className="p-4 rounded-lg border bg-white">
+        <div key={line.index} className="p-4 rounded-lg border bg-white">
           <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
             {line.start !== undefined && (
               <span>Start: {line.start.toFixed(2)}s</span>

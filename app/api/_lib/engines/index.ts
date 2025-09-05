@@ -27,7 +27,8 @@ export const engines: Record<EngineName, EngineFn> = {
 };
 
 export function pickEngine(name?: string): EngineFn {
-  const key = (name ?? process.env.TRANSCRIBE_ENGINE ?? "mock") as EngineName;
+  // Default to real engine; fall back to env, then whisper-local
+  const key = (name ?? process.env.TRANSCRIBE_ENGINE ?? "whisper-local") as EngineName;
   return engines[key] ?? mockTranscribe;
 }
 
