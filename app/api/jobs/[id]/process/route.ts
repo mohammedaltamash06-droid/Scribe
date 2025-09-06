@@ -1,6 +1,7 @@
 // app/api/jobs/[id]/process/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { applyCorrections } from '@/app/api/_lib/text-normalize';
 
 export const runtime = "nodejs";
 const AUDIO_BUCKET = "audio";
@@ -39,7 +40,7 @@ export async function POST(_req: Request, { params }: { params: Promise<Params> 
     await supa.from("jobs").update({ state: "running" }).eq("id", jobId);
 
     // load job
-    const { data: job } = await supa.from("jobs").select("file_path").eq("id", jobId).single();
+    const { data: job } = await supa.from("jobs").select("file_path, doctor_id").eq("id", jobId).single();
     if (!job?.file_path) {
       await supa.from("jobs").update({ state: "error" }).eq("id", jobId);
       return NextResponse.json({ error: "No file uploaded for this job." }, { status: 400 });
@@ -81,7 +82,34 @@ export async function POST(_req: Request, { params }: { params: Promise<Params> 
       }
     }
 
-    const result = await resp.json();
+    let result = await resp.json();
+
+    // --- Fetch and apply doctor corrections ---
+    let corrections: { before_text: string; after_text: string }[] = [];
+    if (job?.doctor_id) {
+      const { data: corrData } = await supa
+        .from('doctor_corrections')
+        .select('before_text, after_text')
+        .eq('doctor_id', job.doctor_id);
+      corrections = corrData ?? [];
+    }
+    if (corrections.length) {
+      if (typeof result.text === 'string') {
+        result.text = applyCorrections(result.text, corrections);
+      }
+      if (Array.isArray(result.segments)) {
+        result.segments = result.segments.map((seg: any) => ({
+          ...seg,
+          text: typeof seg.text === 'string' ? applyCorrections(seg.text, corrections) : seg.text
+        }));
+      }
+      if (Array.isArray(result.lines)) {
+        result.lines = result.lines.map((line: any) => ({
+          ...line,
+          text: typeof line.text === 'string' ? applyCorrections(line.text, corrections) : line.text
+        }));
+      }
+    }
 
     // 4) Validate transcript JSON before saving
     const hasSegments = Array.isArray(result?.segments) || Array.isArray(result?.lines);
