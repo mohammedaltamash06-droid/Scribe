@@ -18,6 +18,19 @@ export function JobsTable() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Download handler for completed jobs
+  const downloadResult = async (jobId: string) => {
+    const res = await fetch(`/api/jobs/${jobId}/result`);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transcript-${jobId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     const fetchRecentJobs = async () => {
       try {
@@ -177,15 +190,16 @@ export function JobsTable() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      disabled={job.status !== 'completed'}
-                      className="hover:bg-primary/10 hover:text-primary transition-colors"
-                      aria-label={`Download ${job.fileName}`}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+                    {job.status === 'completed' && (
+                      <button
+                        onClick={() => downloadResult(job.id)}
+                        className="text-primary hover:underline ml-2"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4 inline" />
+                        <span className="sr-only">Download</span>
+                      </button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

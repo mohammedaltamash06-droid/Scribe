@@ -108,16 +108,32 @@ export async function POST(_req: Request, { params }: { params: Promise<Params> 
     }
 
     // 6) Finish
-    const upd = await supa
+    // primary update (with processed_at if the column exists)
+    let upd = await supa
       .from("jobs")
       .update({
         state: "done",
         result_path: resultPath,
         duration_seconds: result?.duration_seconds ?? null,
+        processed_at: new Date().toISOString(), // harmless if column exists
       })
       .eq("id", jobId)
       .select("result_path")
       .single();
+
+    // fallback if 'processed_at' column doesn't exist
+    if (upd.error) {
+      upd = await supa
+        .from("jobs")
+        .update({
+          state: "done",
+          result_path: resultPath,
+          duration_seconds: result?.duration_seconds ?? null,
+        })
+        .eq("id", jobId)
+        .select("result_path")
+        .single();
+    }
 
     if (upd.error || !upd.data?.result_path) {
       await supa.from("jobs").update({ state: "error" }).eq("id", jobId);

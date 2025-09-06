@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useRef, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Mic } from "lucide-react";
 
 type Line = string | { text?: string };
@@ -15,7 +16,41 @@ export default function TranscriptPanel({
   isLoading = false,
   onLinesChange,
 }: Props) {
-    // ---- ALWAYS call hooks in the same order (top-level)
+  // ---- ALWAYS call hooks in the same order (top-level)
+  const { toast } = useToast();
+    // Export handler with toast
+    async function handleExport(jobId: string) {
+      const res = await fetch(`/api/jobs/${jobId}/result`, { method: "GET" });
+      if (!res.ok) {
+        toast({
+          title: "Export failed",
+          description: "Could not fetch the transcript file. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      toast({
+        title: "Export ready",
+        description: (
+          <a
+            href={url}
+            download={`transcript-${jobId}.json`}
+            className="underline"
+            onClick={() => setTimeout(() => URL.revokeObjectURL(url), 2000)}
+          >
+            Click to download
+          </a>
+        ),
+      });
+      // Optional: auto-download
+      // const a = document.createElement("a");
+      // a.href = url;
+      // a.download = `transcript-${jobId}.json`;
+      // a.click();
+      // URL.revokeObjectURL(url);
+    }
     const normalized = useMemo(
       () => (lines ?? []).map((l) => (typeof l === "string" ? l : l?.text ?? "")),
       [lines]
@@ -67,33 +102,37 @@ export default function TranscriptPanel({
             </div>
           ) : (
             // EDITABLE, justified, hyphenated, ~19px
-            <div
-              ref={editorRef}
-              lang="en"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleInput}
-              className="
-                w-full h-full max-h-full min-h-0 overflow-auto
-                rounded-md border border-slate-200 bg-white
-                px-3 py-3 shadow-inner
-                font-sans text-slate-900 antialiased
-                whitespace-pre-wrap
-                focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300
-              "
-              style={{
-                minHeight: 0,
-                maxHeight: '100%',
-                overflow: 'auto',
-                fontSize: "19px",
-                lineHeight: 1.6,
-                textAlign: "justify",
-                textJustify: "inter-word",
-                hyphens: "auto",
-                WebkitHyphens: "auto",
-                msHyphens: "auto",
-              }}
-            />
+            <div>
+              <div
+                ref={editorRef}
+                lang="en"
+                contentEditable
+                suppressContentEditableWarning
+                onInput={handleInput}
+                className="
+                  w-full h-full max-h-full min-h-0 overflow-auto
+                  rounded-md border border-slate-200 bg-white
+                  px-3 py-3 shadow-inner
+                  font-sans text-slate-900 antialiased
+                  whitespace-pre-wrap
+                  focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300
+                "
+                style={{
+                  minHeight: 0,
+                  maxHeight: '100%',
+                  overflow: 'auto',
+                  fontSize: "19px",
+                  lineHeight: 1.6,
+                  textAlign: "justify",
+                  textJustify: "inter-word",
+                  hyphens: "auto",
+                  WebkitHyphens: "auto",
+                  msHyphens: "auto",
+                }}
+              />
+              {/* Example export button for demonstration; wire up as needed */}
+              {/* <button onClick={() => handleExport('jobId')}>Export</button> */}
+            </div>
           )}
         </div>
       </section>

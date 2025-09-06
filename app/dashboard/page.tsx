@@ -32,6 +32,8 @@ interface DashboardStats {
   dx_count: number;
   rx_count: number;
   proc_count: number;
+  audioMinutes?: number;
+  exports?: number;
 }
 
 interface TimeseriesData {
@@ -52,13 +54,25 @@ export default function DashboardPage() {
         setLoading(true);
 
         // Fetch dashboard summary
-        const summaryResponse = await fetch('/api/dashboard/summary');
-        if (summaryResponse.ok) {
-          const summaryData = await summaryResponse.json();
-          setStats(summaryData.stats);
-          setTimeseries(summaryData.timeseries || []);
+        const summaryRes = await fetch("/api/dashboard/summary", { cache: "no-store" });
+        if (summaryRes.ok) {
+          const s = await summaryRes.json();
+          setStats({
+            totalJobs: s.total_jobs ?? 0,
+            completedJobs: s.completed_jobs ?? 0,
+            processingTime: `${Math.round((s.avg_turnaround_seconds ?? 0) / 60)} min`, // show turnaround as "Avg Processing Time"
+            errorRate: `${((s.error_count ?? 0) / Math.max(1, s.total_jobs ?? 1) * 100).toFixed(0)}%`,
+            // keep existing trend and other fields if needed
+            trend: stats?.trend ?? { jobs: "", jobsUp: false, completion: "", completionUp: false },
+            dx_count: stats?.dx_count ?? 0,
+            rx_count: stats?.rx_count ?? 0,
+            proc_count: stats?.proc_count ?? 0,
+            // you can also surface:
+            audioMinutes: s.audio_minutes_total ?? 0,
+            exports: s.exports_count ?? 0,
+          });
+          setTimeseries(s.timeseries || []);
         } else {
-          // No mock: show empty state
           setStats(null as any);
           setTimeseries([]);
         }
@@ -69,7 +83,7 @@ export default function DashboardPage() {
           description: "Failed to load dashboard statistics",
           variant: "destructive"
         });
-  } finally {
+      } finally {
         setLoading(false);
       }
     };
