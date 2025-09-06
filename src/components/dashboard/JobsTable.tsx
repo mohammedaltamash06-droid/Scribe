@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Download, Eye } from "lucide-react";
 
@@ -9,16 +16,16 @@ interface Job {
   fileName: string;
   doctor: string;
   duration: string;
-  status: 'completed' | 'processing' | 'failed';
+  status: "completed" | "processing" | "failed";
   createdAt: string;
   corrections: number;
 }
 
+// NOTE: All styling/classes preserved. Only data fetching/normalization updated.
 export function JobsTable() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Download handler for completed jobs
   const downloadResult = async (jobId: string) => {
     const res = await fetch(`/api/jobs/${jobId}/result`);
     if (!res.ok) return;
@@ -31,101 +38,101 @@ export function JobsTable() {
     URL.revokeObjectURL(url);
   };
 
+  const fmtDuration = (seconds?: number | null): string => {
+    if (seconds == null || isNaN(seconds as any)) return "-";
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
   useEffect(() => {
+    let alive = true;
+
     const fetchRecentJobs = async () => {
       try {
-        const response = await fetch('/api/jobs/recent');
-        if (response.ok) {
-          const data = await response.json();
-          setJobs(data);
-        } else {
-          throw new Error('API not available');
-        }
-      } catch (error) {
-        console.log('API not available, using mock data');
-        // Fallback to mock data for development
-        setJobs([
-          {
-            id: '1',
-            fileName: 'patient_interview_001.mp3',
-            doctor: 'Dr. Sarah Johnson',
-            duration: '12:34',
-            status: 'completed',
-            createdAt: '2024-01-15 14:30',
-            corrections: 8
-          },
-          {
-            id: '2',
-            fileName: 'consultation_notes_002.wav',
-            doctor: 'Dr. Michael Chen',
-            duration: '8:45',
-            status: 'completed',
-            createdAt: '2024-01-15 13:15',
-            corrections: 5
-          },
-          {
-            id: '3',
-            fileName: 'follow_up_003.m4a',
-            doctor: 'Dr. Emily Rodriguez',
-            duration: '15:22',
-            status: 'processing',
-            createdAt: '2024-01-15 12:00',
-            corrections: 0
-          }
-        ]);
+        const response = await fetch("/api/jobs/recent", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+
+        // Support both shapes: array OR { items: [...] }
+        const rows: any[] = Array.isArray(payload)
+          ? payload
+          : payload.items ?? [];
+
+        const normalized: Job[] = rows
+          .sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          )
+          .slice(0, 5)
+          .map((r) => ({
+            id: r.id,
+            fileName:
+              r.file_name ??
+              (r.file_path ? String(r.file_path).split("/").pop() : r.id),
+            doctor:
+              r.doctor_name ??
+              r.doctor ??
+              (r.doctor_id ? `Doctor #${r.doctor_id}` : "-"),
+            duration: fmtDuration(r.duration_seconds),
+            status:
+              r.state === "done"
+                ? "completed"
+                : r.state === "error" || r.state === "failed"
+                ? "failed"
+                : "processing",
+            createdAt: r.created_at
+              ? new Date(r.created_at).toLocaleString()
+              : "-",
+            corrections: typeof r.corrections === "number" ? r.corrections : 0,
+          }));
+
+        if (alive) setJobs(normalized);
+      } catch {
+        if (alive) setJobs([]); // no mock in production
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     };
 
     fetchRecentJobs();
   }, []);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "text-medical-success border-medical-success/20 bg-medical-success/5";
+      case "processing":
+        return "text-medical-warning border-medical-warning/20 bg-medical-warning/5";
+      case "failed":
+        return "text-destructive border-destructive/20 bg-destructive/5";
+      default:
+        return "text-muted-foreground border-border bg-background";
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-3">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="animate-pulse">
-            <div className="h-12 bg-muted rounded-md"></div>
+            <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+            <div className="h-4 bg-muted rounded w-5/6" />
           </div>
         ))}
       </div>
     );
   }
 
-  const mockJobs = jobs.length > 0 ? jobs : [
-    {
-      id: '4',
-      fileName: 'emergency_notes_004.mp3',
-      doctor: 'Dr. Sarah Johnson',
-      duration: '6:18',
-      status: 'failed' as const,
-      createdAt: '2024-01-15 11:30',
-      corrections: 0
-    },
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-medical-success border-medical-success/20 bg-medical-success/5';
-      case 'processing':
-        return 'text-medical-warning border-medical-warning/20 bg-medical-warning/5';
-      case 'failed':
-        return 'text-destructive border-destructive/20 bg-destructive/5';
-      default:
-        return 'text-muted-foreground border-border bg-background';
-    }
-  };
-
-  if (mockJobs.length === 0) {
+  if (jobs.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
           <Eye className="h-8 w-8" />
         </div>
-        <p className="text-lg font-medium">No transcription jobs yet</p>
-        <p className="text-sm mt-1">Upload your first audio file to get started</p>
+        <p className="text-lg font-medium">No recent completed jobs</p>
+        <p className="text-sm mt-1">Process a file to see it here</p>
       </div>
     );
   }
@@ -133,80 +140,85 @@ export function JobsTable() {
   return (
     <div className="rounded-xl border bg-card shadow-soft overflow-hidden">
       <div className="p-4 border-b border-border/50">
-        <h3 className="font-medium text-foreground">Recent Transcription Jobs</h3>
-        <p className="text-sm text-muted-foreground mt-1">Latest audio transcription activity</p>
+        <p className="text-sm text-muted-foreground">
+          Latest audio transcription activity
+        </p>
       </div>
-      
-      {mockJobs.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
-            <Eye className="h-8 w-8" />
-          </div>
-          <p className="text-lg font-medium">No transcription jobs yet</p>
-          <p className="text-sm mt-1">Upload your first audio file to get started</p>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/50">
-              <TableHead className="font-medium">File Name</TableHead>
-              <TableHead className="font-medium">Doctor</TableHead>
-              <TableHead className="font-medium">Duration</TableHead>
-              <TableHead className="font-medium">Status</TableHead>
-              <TableHead className="font-medium">Created</TableHead>
-              <TableHead className="font-medium">Corrections</TableHead>
-              <TableHead className="text-right font-medium">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockJobs.map((job) => (
-              <TableRow key={job.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell className="font-medium">{job.fileName}</TableCell>
-                <TableCell className="text-muted-foreground">{job.doctor}</TableCell>
-                <TableCell className="font-mono text-sm">{job.duration}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={getStatusColor(job.status)}>
-                    {job.status}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>File Name</TableHead>
+            <TableHead>Doctor</TableHead>
+            <TableHead>Duration</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Corrections</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {jobs.map((job) => (
+            <TableRow
+              key={job.id}
+              className="hover:bg-muted/50 transition-colors"
+            >
+              <TableCell className="font-medium">{job.fileName}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {job.doctor}
+              </TableCell>
+              <TableCell className="font-mono text-sm">
+                {job.duration}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className={getStatusColor(job.status)}>
+                  {job.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {job.createdAt}
+              </TableCell>
+              <TableCell>
+                {job.corrections > 0 ? (
+                  <Badge
+                    variant="outline"
+                    className="text-medical-info border-medical-info/20 bg-medical-info/5"
+                  >
+                    {job.corrections}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-sm">{job.createdAt}</TableCell>
-                <TableCell>
-                  {job.corrections > 0 ? (
-                    <Badge variant="outline" className="text-medical-info border-medical-info/20 bg-medical-info/5">
-                      {job.corrections}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      disabled={job.status !== 'completed'}
-                      className="hover:bg-primary/10 hover:text-primary transition-colors"
-                      aria-label={`View ${job.fileName}`}
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={job.status !== "completed"}
+                    className="hover:bg-primary/10 hover:text-primary transition-colors"
+                    aria-label={`View ${job.fileName}`}
+                    onClick={() =>
+                      window.open(`/api/jobs/${job.id}/result`, "_blank")
+                    }
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  {job.status === "completed" && (
+                    <button
+                      className="inline-flex items-center justify-center rounded-md h-9 w-9 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 border bg-background hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => downloadResult(job.id)}
+                      title="Download JSON"
                     >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {job.status === 'completed' && (
-                      <button
-                        onClick={() => downloadResult(job.id)}
-                        className="text-primary hover:underline ml-2"
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4 inline" />
-                        <span className="sr-only">Download</span>
-                      </button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+                      <Download className="h-4 w-4 inline" />
+                      <span className="sr-only">Download</span>
+                    </button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

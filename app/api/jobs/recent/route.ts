@@ -1,13 +1,25 @@
+
+
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase-server";
 
 export async function GET() {
-  const supa = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const { data, error } = await supa
-    .from("jobs")
-    .select("id, state, file_path, result_path, created_at")
-    .order("created_at", { ascending: false })
-    .limit(10);
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, items: data });
+  try {
+    const supa = createAdminClient();
+
+    const { data, error } = await supa
+      .from("jobs")
+      .select("id, state, doctor_id, file_name, file_path, duration_seconds, created_at")
+      .eq("state", "done")                               // only completed jobs
+      .order("created_at", { ascending: false })         // newest first
+      .limit(5);                                         // last 5
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, items: data ?? [] });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message ?? "unknown error" }, { status: 500 });
+  }
 }
