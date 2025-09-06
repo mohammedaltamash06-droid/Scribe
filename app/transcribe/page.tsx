@@ -241,20 +241,20 @@ export default function TranscribePage() {
   }, [jobId, jobStatus, doctorCorrections, toast]);
 
   // Improved doctor corrections with case-insensitive whole-word replacement
-  function applyDoctorCorrections(lines: Line[], corrections?: any[]): Line[] {
-    if (!corrections) return lines;
-    return lines.map(line => {
-      let correctedText = String(line.text);
-      corrections.forEach(correction => {
-        if (correction.before && correction.after) {
-          const escapedBefore = correction.before.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(`\\b${escapedBefore}\\b`, 'gi');
-          correctedText = correctedText.replace(regex, correction.after);
+    function applyDoctorCorrections(lines: Line[], corrections?: any[]): Line[] {
+      if (!corrections?.length) return lines;
+      return lines.map((line) => {
+        let correctedText = line?.text ?? "";
+        for (const correction of corrections) {
+          if (correction?.before && correction?.after) {
+            const escapedBefore = String(correction.before).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const regex = new RegExp(`\\b${escapedBefore}\\b`, "gi");
+            correctedText = correctedText.replace(regex, String(correction.after));
+          }
         }
+        return { ...line, text: correctedText };
       });
-      return { id: line.id, text: correctedText };
-    });
-  }
+    }
 
   const handleFileUpload = async (file: File) => {
     try {

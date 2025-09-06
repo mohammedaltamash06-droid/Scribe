@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/ui/navigation";
@@ -151,82 +152,76 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts and Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Charts */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="rounded-xl shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <span>Processing Trends</span>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Daily transcription activity over the last 30 days
-                </p>
-              </CardHeader>
-              <CardContent>
-                {!loading && timeseries.length > 0 ? (
-                  <MiniChart
-                    data={timeseries.map(item => ({
-                      date: item.date,
-                      value: item.jobs,
-                      completions: item.completions
-                    }))}
-                    type="bar"
-                    dataKey="value"
-                    xAxisKey="date"
-                  />
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                      <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>{loading ? "Loading chart data..." : "No data yet"}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Summary Card */}
-            <Card className="rounded-xl shadow-soft bg-gradient-secondary">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                  <div>
-                    <p className="text-2xl font-bold text-primary">{completionRate}%</p>
-                    <p className="text-sm text-muted-foreground">Success Rate</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-medical-success">
-                      {loading ? "..." : stats?.completedJobs || "0"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-medical-info">
-                      {loading ? "..." : stats?.processingTime || "0 min"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Avg Time</p>
+        <section className="grid grid-cols-1 gap-4">
+          <Card className="rounded-xl shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <span>Processing Trends</span>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Daily transcription activity over the last 30 days
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!loading && timeseries.length > 0 ? (
+                <MiniChart
+                  data={timeseries.map(item => ({
+                    date: item.date,
+                    value: item.jobs,
+                    completions: item.completions
+                  }))}
+                  type="bar"
+                  dataKey="value"
+                  xAxisKey="date"
+                />
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>{loading ? "Loading chart data..." : "No data yet"}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* Summary Card remains below Processing Trends */}
+          <Card className="rounded-xl shadow-soft bg-gradient-secondary">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-primary">{completionRate}%</p>
+                  <p className="text-sm text-muted-foreground">Success Rate</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-medical-success">
+                    {loading ? "..." : stats?.completedJobs || "0"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">This Month</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-medical-info">
+                    {loading ? "..." : stats?.processingTime || "0 min"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Avg Time</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Recent Jobs */}
-          <div className="space-y-6">
-            <Card className="rounded-xl shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Jobs</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Latest transcription activity
-                </p>
-              </CardHeader>
-              <CardContent>
-                <JobsTable />
-              </CardContent>
-            </Card>
+        {/* ==== Recent Transcription Jobs (full width table) ==== */}
+        </section>
+        <section className="mt-4">
+          <div className="rounded-xl border bg-card">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <h3 className="text-lg font-semibold">Recent Transcription Jobs</h3>
+              {/* Optional: add filters/actions here later if needed */}
+            </div>
+            <div className="p-4">
+              <JobsTable />
+            </div>
           </div>
-        </div>
+        </section>
 
   {/* DX/RX/PROC blocks removed. Only KPIs and Recent Jobs are shown as per new dashboard spec. */}
       </div>

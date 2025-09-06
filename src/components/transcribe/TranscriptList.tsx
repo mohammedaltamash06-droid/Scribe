@@ -17,54 +17,24 @@ const toNumber = (v: any): number | undefined =>
  * - accepts Line[], { lines: Line[] }, { segments: {start,end,text}[] }, or string
  * - returns Line[]
  */
-export function normalizeLines(input: unknown): Line[] {
-  try {
-    // Case 1: already Line[]
-    if (Array.isArray(input)) {
-      // ensure minimal shape
-      return (input as any[]).map((row, i): Line => ({
-        index: typeof row?.index === "number" ? row.index : i,
-        start: toNumber((row as any)?.start),
-        end: toNumber((row as any)?.end),
-        text: String((row as any)?.text ?? ""),
-        speaker: (row as any)?.speaker ?? null,
-      }));
-    }
+export function normalizeLines(input: any): Line[] {
+  const src = Array.isArray(input)
+    ? input
+    : input?.lines ?? input?.segments ?? [];
 
-    // Case 2: object with .lines
-    if (input && typeof input === "object" && "lines" in (input as any)) {
-      const arr = (input as any).lines;
-      if (Array.isArray(arr)) return normalizeLines(arr);
+  return (src ?? []).map((item: any, i: number) => {
+    if (typeof item === "string") {
+      return { index: i, text: item } as Line;
     }
-
-    // Case 3: object with .segments (faster-whisper style)
-    if (input && typeof input === "object" && "segments" in (input as any)) {
-      const segs = (input as any).segments;
-      if (Array.isArray(segs)) {
-        return segs.map((s: any, i: number): Line => ({
-          index: i,
-          start: toNumber(s?.start),
-          end: toNumber(s?.end),
-          text: String(s?.text ?? ""),
-          speaker: s?.speaker ?? null,
-        }));
-      }
-    }
-
-    // Case 4: plain string (split on newlines into pseudo-lines)
-    if (typeof input === "string") {
-      const rows = input.split(/\r?\n/).filter(Boolean);
-      return rows.map((t, i) => ({
-        index: i,
-        text: t.trim(),
-      }));
-    }
-
-    // Unknown shape → empty list
-    return [];
-  } catch {
-    return [];
-  }
+    return {
+      index: item.index ?? i,
+      text: item.text ?? "",
+      start: item.start,
+      end: item.end,
+      speaker: item.speaker ?? item.speaker_label ?? item.spk,
+      ...item,
+    } as Line;
+  });
 }
 
 /**
